@@ -1,0 +1,12 @@
+{
+ "Path": {
+  "train": "dataset/semlink_category/train_5500.label",
+  "vocab_dir": "models/category/1116baseline/vocab",
+  "model_dir": "models/category/1116baseline",
+  "test": "dataset/semlink_category/TREC_10.label.txt"
+ },
+ "Dataset": {
+  "pad_size": 60,
+  "batch_size": 32
+ }
+}
