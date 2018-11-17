@@ -7,9 +7,8 @@ from torchtext.data import Field, Example, Dataset, Iterator
 
 
 class BaseReader(object):
-    def __init__(self, datafile, PAD_TOKEN='<pad>', batch_size=64, pad_size=60):
+    def __init__(self, datafile, PAD_TOKEN='<pad>', pad_size=60):
         self.pad_size = pad_size
-        self.batch_size = batch_size
         self.PAD_TOKEN = PAD_TOKEN
         self.nlp = spacy.load('en')
 
@@ -29,20 +28,28 @@ class BaseReader(object):
             if not field.use_vocab:
                 continue
 
-            if not os.path.isdir(vocab_dir):
-                os.makedirs(vocab_dir)
-
             path = os.path.join(vocab_dir, name)
             if os.path.isfile(path):
                 with open(path, 'rb') as fread:
                     field.vocab = pickle.load(fread)
             else:
-                field.build_vocab(self.dataset, min_freq=1)
+                field.build_vocab(self.dataset)
                 with open(path, 'wb') as fwrite:
                     pickle.dump(field.vocab, fwrite)
 
-    def get_dataset_iterator(self):
-        return iter(Iterator(self.dataset, self.batch_size))
+    def set_vocabs(self, vocabs):
+        fields = self.dataset.fields
+        for name, field in fields.items():
+            field.vocab = vocabs[name]
+
+    def get_vocabs(self):
+        return {name: field.vocab for name, field in self.dataset.fields.items()}
+
+    def get_dataset_iterator(self, batch_size, **kwargs):
+        return iter(Iterator(self.dataset, batch_size, **kwargs))
+
+    def get_vocab(self, key):
+        return self.dataset.fields[key].vocab
 
     @abstractmethod
     def _data_dict_generator(self, datafile):
@@ -79,7 +86,7 @@ class BaseReader(object):
 
 class UIUCReader(BaseReader):
     def __init__(self, datafile, PAD_TOKEN='<pad>', batch_size=32, pad_size=60):
-        super(UIUCReader, self).__init__(datafile, PAD_TOKEN=PAD_TOKEN, batch_size=batch_size, pad_size=pad_size)
+        super(UIUCReader, self).__init__(datafile, PAD_TOKEN=PAD_TOKEN, pad_size=pad_size)
         self.nlp = spacy.load('en')
 
     def preprocess(self, sentence):
@@ -97,7 +104,7 @@ class UIUCReader(BaseReader):
     def _get_fields(self):
         fields = {
             'words': ('words', Field(pad_token=self.PAD_TOKEN, batch_first=True, sequential=True, use_vocab=True, fix_length=self.pad_size)),
-            'category': ('category', Field(batch_first=True, sequential=False, use_vocab=True)),
+            'category': ('category', Field(batch_first=True, sequential=False, use_vocab=True, unk_token=None)),
         }
 
         return fields

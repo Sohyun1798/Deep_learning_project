@@ -1,0 +1,29 @@
+{
+ "Path": {
+  "test_result": "models/baseline/category/test_result.txt",
+  "test": "dataset/semlink_category/TREC_10.label.txt",
+  "model_dir": "models/baseline/category",
+  "vocab_dir": "models/baseline/category/vocab",
+  "train": "dataset/semlink_category/train_5500.label"
+ },
+ "Dataset": {
+  "pad_size": 60,
+  "batch_size": 50
+ },
+ "Model": {
+  "hidden_size": 100,
+  "out_channels": 300,
+  "embed": "embedding/aquaint+wiki.txt.gz.ndim=50.bin",
+  "conv_widths": [
+   1,
+   2,
+   3
+  ],
+  "cuda_device": 0
+ },
+ "Train": {
+  "epoch": 25,
+  "lr": 0.0005,
+  "weight_decay": 0.001
+ }
+}
