@@ -8,12 +8,12 @@
  },
  "Dataset": {
   "pad_size": 60,
-  "batch_size": 50
+  "batch_size": 32
  },
  "Model": {
   "hidden_size": 100,
   "out_channels": 300,
-  "embed": "embedding/aquaint+wiki.txt.gz.ndim=50.bin",
+  "embed_dir": "vocab/",
   "conv_widths": [
    1,
    2,
@@ -22,8 +22,8 @@
   "cuda_device": 0
  },
  "Train": {
-  "epoch": 25,
+  "epoch": 200,
   "lr": 0.0005,
-  "weight_decay": 0.001
+  "weight_decay": 0.0001
  }
 }
