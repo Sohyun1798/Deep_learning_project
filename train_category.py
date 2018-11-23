@@ -8,7 +8,7 @@ import torch
 from torch import optim
 import torch.nn.functional as F
 
-from lib.embedding import load_embedding
+from lib.embedding import load_full_embedding_with_vocab
 from lib.reader import UIUCReader
 from lib.baseline.category import BaselineCategoryClassifier
 
@@ -40,7 +40,7 @@ def test_accuracy(clf, test_reader, cuda_device):
     categories = []
     predicts = []
     sents = []
-    for batch in test_reader.get_dataset_iterator(batch_size=1, train=False, sort=False):
+    for batch in iter(test_reader.get_dataset_iterator(batch_size=1, train=False, sort=False)):
         category = batch.category
         words = batch.words
 
@@ -80,21 +80,25 @@ def main(config_path):
     print('Loading train data...')
     train_reader = UIUCReader(train, PAD_TOKEN='<pad>', pad_size=pad_size)
     train_reader.build_vocabs(vocab_dir)
-    vocabs = train_reader.get_vocabs() # will be used to test time
 
     # model
     model_config = config_dict['Model']
-    embed = load_embedding(model_config['embed'], vocabs['words'].stoi)
     pad_size = dataset_config['pad_size']
     conv_widths = model_config['conv_widths']
     hidden_size = model_config['hidden_size']
     out_channels = model_config['out_channels']
     cuda_device = model_config['cuda_device']
+    # cuda_device = None # debugging
     out_size = len(train_reader.get_vocab('category'))
 
-    clf = BaselineCategoryClassifier(embed=embed, out_channels=out_channels,
+    # load pretrained vocab
+    words_embed, words_vocab = load_full_embedding_with_vocab(model_config['embed_dir'])
+    train_reader.set_vocabs({'words': words_vocab})
+    vocabs = train_reader.get_vocabs() # will be used to test time
+
+    clf = BaselineCategoryClassifier(words_embed=words_embed, out_channels=out_channels,
                                      cuda_device=cuda_device,
-                                    conv_widths=conv_widths, pad_size=pad_size,
+                                     conv_widths=conv_widths, pad_size=pad_size,
                                      hidden_size=hidden_size, out_size=out_size)
 
     # train
@@ -103,17 +107,25 @@ def main(config_path):
     weight_decay = train_config['weight_decay']
     lr = train_config['lr']
 
-    optimizer = optim.Adam(clf.parameters(), lr=lr, weight_decay=weight_decay)
+    optimizer = optim.Adam(clf.parameters(), lr=lr, weight_decay=weight_decay, eps=1e-5)
     if cuda_device is not None:
         clf.cuda(device=cuda_device)
+
+    print('Loading test data...')
+    test_reader = UIUCReader(test, PAD_TOKEN='<pad>', pad_size=pad_size)
+    test_reader.set_vocabs(vocabs)
 
     print('Training...')
     for epoch in range(num_epoch):
         clf.train()
         total_loss = []
-        for batch in train_reader.get_dataset_iterator(batch_size):
-            category = batch.category.cuda()
-            words = batch.words.cuda()
+        for batch in iter(train_reader.get_dataset_iterator(batch_size)):
+            category = batch.category
+            words = batch.words
+
+            if cuda_device is not None:
+                category = category.cuda()
+                words = words.cuda()
 
             optimizer.zero_grad()
             outputs = clf(words)
@@ -124,15 +136,19 @@ def main(config_path):
             optimizer.step()
 
         print('epoch %d / loss %.3f' % (epoch+1, np.mean(total_loss)))
-        acc, _ ,_ ,_ = test_accuracy(clf, train_reader, cuda_device)
-        print('train_accuracy: %.3f' % acc)
+        train_acc, _ ,_ ,_ = test_accuracy(clf, train_reader, cuda_device)
+        print('train_accuracy: %.3f' % train_acc)
+
+        test_acc, _, _, _ = test_accuracy(clf, test_reader, cuda_device)
+        print('test_accuracy: %.3f' % test_acc)
+        print()
     print()
 
     torch.save(clf.state_dict(), os.path.join(model_dir, './net.pt'))
 
     # test
     print('Loading test data...')
-    test_reader = UIUCReader(test, PAD_TOKEN='<pad>', **dataset_config)
+    test_reader = UIUCReader(test, PAD_TOKEN='<pad>', pad_size=pad_size)
     test_reader.set_vocabs(vocabs)
 
     print('Testing...')
