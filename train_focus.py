@@ -9,8 +9,8 @@ from torch import optim
 import torch.nn.functional as F
 
 from lib.embedding import load_full_embedding_with_vocab
-from lib.reader import UIUCReader
-from lib.baseline.category import BaselineCategoryClassifier
+from lib.reader import QFocusReader
+from lib.baseline.focus import BaselineFocusClassifier
 
 
 def test_dataset_iterator(dataset_loader, dataset_iterator):
@@ -24,7 +24,7 @@ def test_dataset_iterator(dataset_loader, dataset_iterator):
         print(batch)
         print()
         for i in range(batch.batch_size):
-            print('category: %d %s' % (batch.category[i], dataset_loader.dataset.fields['category'].vocab.itos[batch.category[i]]))
+            print('focus: %d' % (batch.focus[i]))
             for key in ['words']:
                 print('%s:' % key)
                 print(getattr(batch, key)[i])
@@ -35,13 +35,13 @@ def test_dataset_iterator(dataset_loader, dataset_iterator):
             print()
 
 
-def test_accuracy(clf, test_reader, cuda_device):
+def test_accuracy(clf, test_iterator, cuda_device):
     clf.eval()
-    categories = []
+    focuses = []
     predicts = []
     sents = []
-    for batch in iter(test_reader.get_dataset_iterator(batch_size=1, train=False, sort=False)):
-        category = batch.category
+    for batch in iter(test_iterator):
+        focus = batch.focus
         words = batch.words
 
         outputs = clf(words)
@@ -50,15 +50,16 @@ def test_accuracy(clf, test_reader, cuda_device):
         else:
             predict = np.argmax(outputs.detach().cpu().numpy(), axis=-1)
 
-        categories.append(category.numpy())
+        focuses.append(focus.numpy())
         predicts.append(predict)
         sents.append(words.numpy())
 
-    categories = np.concatenate(categories)
+    focuses = np.concatenate(focuses)
     predicts = np.concatenate(predicts)
     sents = np.concatenate(sents)
-    acc = sklearn.metrics.accuracy_score(categories, predicts)
-    return acc, categories, predicts, sents
+    acc = sklearn.metrics.accuracy_score(focuses, predicts)
+    return acc, focuses, predicts, sents
+
 
 
 def main(config_path):
@@ -69,8 +70,6 @@ def main(config_path):
     model_dir = path_config['model_dir']
     vocab_dir = path_config['vocab_dir']
     train = path_config['train']
-    test = path_config['test']
-    test_result = path_config['test_result']
 
     # dataset
     dataset_config = config_dict['Dataset']
@@ -78,91 +77,113 @@ def main(config_path):
     batch_size = dataset_config['batch_size']
 
     print('Loading train data...')
-    train_reader = UIUCReader(train, PAD_TOKEN='<pad>', pad_size=pad_size)
+    train_reader = QFocusReader(train, PAD_TOKEN='<pad>', pad_size=pad_size)
     train_reader.build_vocabs(vocab_dir)
 
     # model
     model_config = config_dict['Model']
     pad_size = dataset_config['pad_size']
-    conv_widths = model_config['conv_widths']
+    conv_width = model_config['conv_width']
     hidden_size = model_config['hidden_size']
     out_channels = model_config['out_channels']
     cuda_device = model_config['cuda_device']
-    # cuda_device = None # debugging
-    out_size = len(train_reader.get_vocab('category'))
+    num_filters = model_config['num_filters']
 
     # load pretrained vocab
     words_embed, words_vocab = load_full_embedding_with_vocab(model_config['embed_dir'])
     train_reader.set_vocabs({'words': words_vocab})
-    vocabs = train_reader.get_vocabs() # will be used to test time
+    vocabs = train_reader.get_vocabs()  # will be used to test time
 
-    clf = BaselineCategoryClassifier(words_embed=words_embed, out_channels=out_channels,
-                                     cuda_device=cuda_device,
-                                     conv_widths=conv_widths, pad_size=pad_size,
-                                     hidden_size=hidden_size, out_size=out_size)
-
-    # train
     train_config = config_dict['Train']
     num_epoch = train_config['epoch']
     weight_decay = train_config['weight_decay']
     lr = train_config['lr']
+    kfold = train_config['kfold']
 
+    # cross-val
+    folds = train_reader.get_cross_val_dataset_iterator(batch_size=batch_size, k_fold=kfold)
+    fold_accs = []
+    for test_idx in range(kfold):
+        clf = BaselineFocusClassifier(words_embed=words_embed, out_channels=out_channels,
+                                      cuda_device=cuda_device, conv_width=conv_width,
+                                      pad_size=pad_size, hidden_size=hidden_size,
+                                      num_filters=num_filters)
+        optimizer = optim.Adam(clf.parameters(), lr=lr, weight_decay=weight_decay, eps=1e-5)
+        if cuda_device is not None:
+            clf.cuda(device=cuda_device)
+
+        # train
+        clf.train()
+        for epoch in range(num_epoch):
+            total_loss = []
+            for i, fold in enumerate(folds):
+                if i == test_idx:
+                    continue
+
+                for batch in iter(fold):
+                    focus = batch.focus
+                    words = batch.words
+
+                    if cuda_device is not None:
+                        focus = focus.cuda()
+                        words = words.cuda()
+
+                    optimizer.zero_grad()
+                    outputs = clf(words)
+
+                    loss = F.cross_entropy(outputs, focus)
+                    total_loss.append(loss.item())
+                    loss.backward()
+                    optimizer.step()
+
+            print('epoch %d / loss %.3f' % (epoch + 1, np.mean(total_loss)))
+        print()
+
+        # test
+        print('Testing...')
+        acc, _, _, _ = test_accuracy(clf, folds[test_idx], cuda_device)
+        print('test accuracy:', acc)
+        fold_accs.append(acc)
+
+    print()
+    print('test accuracies:', fold_accs)
+    print('mean accuracies:', np.mean(fold_accs))
+    print()
+
+    print('Final Training...')
+
+    clf = BaselineFocusClassifier(words_embed=words_embed, out_channels=out_channels,
+                                  cuda_device=cuda_device, conv_width=conv_width,
+                                  pad_size=pad_size, hidden_size=hidden_size,
+                                  num_filters=num_filters)
     optimizer = optim.Adam(clf.parameters(), lr=lr, weight_decay=weight_decay, eps=1e-5)
     if cuda_device is not None:
         clf.cuda(device=cuda_device)
 
-    print('Loading test data...')
-    test_reader = UIUCReader(test, PAD_TOKEN='<pad>', pad_size=pad_size)
-    test_reader.set_vocabs(vocabs)
-
-    print('Training...')
+    # train
+    clf.train()
     for epoch in range(num_epoch):
-        clf.train()
         total_loss = []
+
         for batch in iter(train_reader.get_dataset_iterator(batch_size)):
-            category = batch.category
+            focus = batch.focus
             words = batch.words
 
             if cuda_device is not None:
-                category = category.cuda()
+                focus = focus.cuda()
                 words = words.cuda()
 
             optimizer.zero_grad()
             outputs = clf(words)
 
-            loss = F.cross_entropy(outputs, category)
+            loss = F.cross_entropy(outputs, focus)
             total_loss.append(loss.item())
             loss.backward()
             optimizer.step()
 
-        print('epoch %d / loss %.3f' % (epoch+1, np.mean(total_loss)))
-        train_acc, _ ,_ ,_ = test_accuracy(clf, train_reader, cuda_device)
-        print('train_accuracy: %.3f' % train_acc)
-
-        test_acc, _, _, _ = test_accuracy(clf, test_reader, cuda_device)
-        print('test_accuracy: %.3f' % test_acc)
-        print()
-    print()
+        print('epoch %d / loss %.3f' % (epoch + 1, np.mean(total_loss)))
 
     torch.save(clf.state_dict(), os.path.join(model_dir, './net.pt'))
-
-    # test
-    print('Loading test data...')
-    test_reader = UIUCReader(test, PAD_TOKEN='<pad>', pad_size=pad_size)
-    test_reader.set_vocabs(vocabs)
-
-    print('Testing...')
-    acc, categories, predicts, sents = test_accuracy(clf, test_reader, cuda_device)
-    print('test accuracy:', acc)
-
-    print('Writing test result...')
-    with open(test_result, 'w') as fwrite:
-        for category, predict, sent in zip(categories, predicts, sents):
-            fwrite.write('%s\t%s\t%s\n' %
-                         (test_reader.get_vocab('category').itos[category],
-                          test_reader.get_vocab('category').itos[predict],
-                          ' '.join([test_reader.get_vocab('words').itos[word] for word in sent])))
-
     print('Done!')
 
 
