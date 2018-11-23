@@ -1,29 +1,25 @@
 {
  "Path": {
-  "test_result": "models/baseline/category/test_result.txt",
-  "test": "dataset/semlink_category/TREC_10.label.txt",
-  "model_dir": "models/baseline/category",
-  "vocab_dir": "models/baseline/category/vocab",
-  "train": "dataset/semlink_category/train_5500.label"
+  "model_dir": "models/baseline/focus",
+  "vocab_dir": "models/baseline/focus/vocab",
+  "train": "dataset/semlink_focus/qfocus/data_2k.txt"
  },
  "Dataset": {
   "pad_size": 60,
-  "batch_size": 32
+  "batch_size": 16
  },
  "Model": {
   "hidden_size": 100,
-  "out_channels": 300,
+  "out_channels": 100,
   "embed_dir": "vocab/",
-  "conv_widths": [
-   1,
-   2,
-   3
-  ],
-  "cuda_device": 0
+  "conv_width": 4,
+  "cuda_device": 0,
+  "num_filters": 4
  },
  "Train": {
-  "epoch": 200,
-  "lr": 0.0005,
-  "weight_decay": 0.0001
+  "epoch": 50,
+  "lr": 0.0001,
+  "weight_decay": 0.00001,
+  "kfold": 5
  }
 }
