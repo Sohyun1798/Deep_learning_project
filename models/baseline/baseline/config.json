@@ -12,7 +12,7 @@
  },
  "Dataset": {
   "pad_size": 60,
-  "batch_size": 2
+  "batch_size": 50
  },
  "Model": {
   "hidden_size": 200,
@@ -27,6 +27,7 @@
  "Train": {
   "epoch": 50,
   "lr": 0.00005,
-  "weight_decay": 0.00001
+  "weight_decay": 0.000001,
+  "early_stopping": 5
  }
 }

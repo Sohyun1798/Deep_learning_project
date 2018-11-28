@@ -11,7 +11,7 @@ import torch.nn.functional as F
 from lib.embedding import load_full_embedding_with_vocab
 from lib.reader import QFocusReader, test_dataset_iterator
 from lib.baseline.focus import BaselineFocusClassifier
-from lib.train import test_accuracy, train_model
+from lib.train import test_score, train_model
 
 
 def main(config_path):
@@ -68,7 +68,7 @@ def main(config_path):
 
         # test
         print('Testing...')
-        acc = test_accuracy(clf, folds[test_idx], cuda_device, label_name='focus')
+        acc = test_score(clf, folds[test_idx], cuda_device, label_name='focus')
         print('test accuracy:', acc)
         fold_accs.append(acc)
 

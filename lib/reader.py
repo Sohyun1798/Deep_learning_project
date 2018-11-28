@@ -205,10 +205,7 @@ class WikiqaPairReader(BaseReader):
     def _data_dict_generator(self):
         with open(self.datafile, 'r') as fread:
             next(fread)
-            for i, line in enumerate(fread):
-                if i > 6:
-                    break # Debugging
-
+            for line in fread:
                 cells = line.split('\t')
                 question = cells[1]
                 answer = cells[5]

@@ -13,7 +13,8 @@ from lib.baseline.focus import BaselineFocusClassifier
 from lib.embedding import load_full_embedding_with_vocab
 from lib.reader import WikiqaPairReader, test_dataset_iterator
 from lib.baseline.category import BaselineCategoryClassifier
-from lib.train import test_accuracy, train_model
+from lib.baseline.baseline import BaselineAnswerSelectionClassifier
+from lib.train import test_score, train_model
 
 
 def main(config_path):
@@ -41,14 +42,71 @@ def main(config_path):
     pad_size = dataset_config['pad_size']
     batch_size = dataset_config['batch_size']
 
-    print('Loading train data...') # Debugging
-    train_reader = WikiqaPairReader(dev, category_model, focus_model, words_vocab.stoi,
+    print('Loading train data...')
+    train_reader = WikiqaPairReader(train, category_model, focus_model, words_vocab.stoi,
                                     category_vocab.itos, PAD_TOKEN='<pad>', pad_size=pad_size)
-    # train_reader.build_vocabs()
-    train_reader.set_vocabs({'q_words': words_vocab, 'a_words': words_vocab})
+    dev_reader = WikiqaPairReader(dev, category_model, focus_model, words_vocab.stoi,
+                                    category_vocab.itos, PAD_TOKEN='<pad>', pad_size=pad_size)
+    vocabs = {'q_words': words_vocab, 'a_words': words_vocab}
+    train_reader.set_vocabs(vocabs)
+    dev_reader.set_vocabs(vocabs)
 
-    test_dataset_iterator(train_reader, train_reader.get_dataset_iterator(batch_size),
-                          ['q_words', 'a_words', 'q_word_over', 'a_word_over', 'q_sem_over', 'a_sem_over', 'label'])
+    # model
+    model_config = config_dict['Model']
+    conv_width = model_config['conv_width']
+    out_channels = model_config['out_channels']
+    hidden_size = model_config['hidden_size']
+    cuda_device = model_config['cuda_device']
+
+    clf = BaselineAnswerSelectionClassifier(words_embed=words_embed, out_channels=out_channels,
+                conv_width=conv_width, hidden_size=hidden_size, cuda_device=cuda_device)
+
+    # train
+    train_config = config_dict['Train']
+    num_epoch = train_config['epoch']
+    weight_decay = train_config['weight_decay']
+    lr = train_config['lr']
+    early_stopping = train_config['early_stopping']
+
+    optimizer = optim.Adam(clf.parameters(), lr=lr, weight_decay=weight_decay, eps=1e-5)
+    if cuda_device is not None:
+        clf.cuda(device=cuda_device)
+
+    print('Training...')
+    train_model(clf, optimizer, train_reader.get_dataset_iterator(batch_size), label_name='label',
+                test_iterator=dev_reader.get_dataset_iterator(batch_size),
+                num_epoch=num_epoch, cuda_device=cuda_device, early_stopping=early_stopping,
+                input_names=['q_words', 'a_words', 'q_word_over', 'a_word_over', 'q_sem_over', 'a_sem_over'],
+                metric=sklearn.metrics.precision_score, metric_name='precision')
+    print()
+
+    torch.save(clf.state_dict(), os.path.join(model_dir, './net.pt'))
+
+    # test
+    print('Loading test data...')
+    test_reader = WikiqaPairReader(test, category_model, focus_model, words_vocab.stoi,
+                                  category_vocab.itos, PAD_TOKEN='<pad>', pad_size=pad_size)
+    test_reader.set_vocabs(vocabs)
+
+    print('Testing...')
+    acc, labels, predicts, inputs = test_score(clf, test_reader.get_dataset_iterator(batch_size),
+                                               cuda_device, label_name='label', return_info=True,
+                                               input_names=['q_words', 'a_words', 'q_word_over', 'a_word_over',
+                                                                  'q_sem_over', 'a_sem_over'])
+    print('test accuracy:', acc)
+    print('test precision:', sklearn.metrics.precision_score(labels, predicts))
+
+    print('Writing test result...')
+    with open(test_result, 'w') as fwrite:
+        for label, predict, input_data in zip(labels, predicts, inputs):
+            q_words, a_words, q_word_over, a_word_over, q_sem_over, a_sem_over = input_data
+            fwrite.write('%d\t%d\t%s\t%s\n' %
+                         (label, predict,
+                          ' '.join([test_reader.get_vocab('q_words').itos[word] for word in q_words]),
+                          ' '.join([test_reader.get_vocab('a_words').itos[word] for word in a_words]),))
+
+    print('Done!')
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

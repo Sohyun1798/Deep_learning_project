@@ -67,12 +67,4 @@ class BaselineFocusClassifier(BaseClassifier):
         hidden2_out = self.hidden2(hidden1_out)
         return hidden2_out.squeeze(-1)
 
-    def predict(self, *input):
-        logits = self.forward(*input)
-        scores = F.softmax(logits, dim=-1)
-
-        if self.cuda_device is not None:
-            scores = scores.detach().cpu().numpy()
-
-        return np.argmax(scores, axis=-1)
 

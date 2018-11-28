@@ -73,12 +73,3 @@ class BaselineCategoryClassifier(BaseClassifier):
         hidden2_out = self.hidden2(F.relu(self.dropout(hidden1_out)))
 
         return hidden2_out
-
-    def predict(self, *input):
-        logits = self.forward(*input)
-        scores = F.softmax(logits, dim=-1)
-
-        if self.cuda_device is not None:
-            scores = scores.detach().cpu().numpy()
-
-        return np.argmax(scores, axis=-1)

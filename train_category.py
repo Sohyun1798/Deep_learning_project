@@ -11,7 +11,7 @@ import torch.nn.functional as F
 from lib.embedding import load_full_embedding_with_vocab
 from lib.reader import UIUCReader, test_dataset_iterator
 from lib.baseline.category import BaselineCategoryClassifier
-from lib.train import test_accuracy, train_model
+from lib.train import test_score, train_model
 
 
 def main(config_path):
@@ -82,8 +82,8 @@ def main(config_path):
     test_reader.set_vocabs(vocabs)
 
     print('Testing...')
-    acc, categories, predicts, sents = test_accuracy(clf, test_reader.get_dataset_iterator(batch_size),
-                                cuda_device, label_name='category', return_info=True)
+    acc, categories, predicts, sents = test_score(clf, test_reader.get_dataset_iterator(batch_size),
+                                                  cuda_device, label_name='category', return_info=True)
     print('test accuracy:', acc)
 
     print('Writing test result...')
