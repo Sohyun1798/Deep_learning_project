@@ -30,22 +30,13 @@ class BaseClassifier(nn.Module):
     def forward(self, *input):
         raise NotImplementedError('You should use child class')
 
-    def predict(self, *input):
-        logits = self.forward(*input)
-        scores = F.softmax(logits, dim=-1)
 
-        if self.cuda_device is not None:
-            scores = scores.detach().cpu().numpy()
-
-        return np.argmax(scores, axis=-1)
-
-
-def test_score(clf, test_iterator, cuda_device, label_name, input_names=['words'],
-               return_info=False, metric=sklearn.metrics.accuracy_score):
+def test_accuracy(clf, test_iterator, cuda_device, label_name, input_name='words',
+                  return_info=False):
     clf.eval()
     labels = []
     predicts = []
-    total_inputs = []
+    inputs = []
 
     if not isinstance(test_iterator, list):
         test_iterator = [test_iterator] # for cross-val
@@ -53,11 +44,9 @@ def test_score(clf, test_iterator, cuda_device, label_name, input_names=['words'
     for iterator in test_iterator:
         for batch in iter(iterator):
             label = getattr(batch, label_name)
-            inputs = []
-            for input_name in input_names:
-                inputs.append(getattr(batch, input_name))
+            words = getattr(batch, input_name)
 
-            outputs = clf(*inputs)
+            outputs = clf(words)
             if cuda_device is None:
                 predict = np.argmax(outputs.detach().numpy(), axis=-1)
             else:
@@ -65,28 +54,22 @@ def test_score(clf, test_iterator, cuda_device, label_name, input_names=['words'
 
             labels.append(label.numpy())
             predicts.append(predict)
-
-            if len(input_names) == 1:
-                total_inputs.append(inputs[0].numpy())
-            else:
-                total_inputs.append([input_data.numpy() for input_data in inputs])
+            inputs.append(words.numpy())
 
     labels = np.concatenate(labels)
     predicts = np.concatenate(predicts)
-    score = metric(labels, predicts)
+    inputs = np.concatenate(inputs)
+    acc = sklearn.metrics.accuracy_score(labels, predicts)
 
     if return_info:
-        if len(input_names) == 1:
-            return score, labels, predicts, np.concatenate(total_inputs)
-        else:
-            return score, labels, predicts, [example for batch in total_inputs for example in zip(*batch)]
+        return acc, labels, predicts, inputs
     else:
-        return score
+        return acc
 
 
-def train_model(clf, optimizer, train_iterator, label_name, input_names=['words'],
+def train_model(clf, optimizer, train_iterator, label_name, input_name='words',
                 test_iterator=None, num_epoch=0, cuda_device=None, early_stopping=3,
-                verbose=True, metric=sklearn.metrics.accuracy_score, metric_name='accuracy'):
+                verbose=True):
     if num_epoch == 0 and early_stopping == 0:
         raise ValueError('if num_epoch == 0 and early_stopping == 0, trainig will run infinitely')
 
@@ -115,17 +98,14 @@ def train_model(clf, optimizer, train_iterator, label_name, input_names=['words'
         for iterator in train_iterator:
             for batch in iter(iterator):
                 label = getattr(batch, label_name)
-
-                inputs = []
-                for input_name in input_names:
-                    inputs.append(getattr(batch, input_name))
+                words = getattr(batch, input_name)
 
                 if cuda_device is not None:
                     label = label.cuda()
-                    inputs = [input_data.cuda() for input_data in inputs]
+                    words = words.cuda()
 
                 optimizer.zero_grad()
-                outputs = clf(*inputs)
+                outputs = clf(words)
 
                 loss = F.cross_entropy(outputs, label)
                 total_loss.append(loss.item())
@@ -133,12 +113,12 @@ def train_model(clf, optimizer, train_iterator, label_name, input_names=['words'
                 optimizer.step()
 
         if verbose: print('epoch %d / loss %.3f' % (epoch+1, np.mean(total_loss)))
-        train_acc = test_score(clf, train_iterator, cuda_device, label_name=label_name, input_names=input_names, metric=metric)
-        if verbose: print('train_%s: %.3f' % (metric_name, train_acc))
+        train_acc = test_accuracy(clf, train_iterator, cuda_device, label_name=label_name)
+        if verbose: print('train_accuracy: %.3f' % train_acc)
 
         if test_iterator is not None:
-            test_acc = test_score(clf, test_iterator, cuda_device, label_name=label_name, input_names=input_names, metric=metric)
-            if verbose: print('test_%s: %.3f' % (metric_name, test_acc))
+            test_acc = test_accuracy(clf, test_iterator, cuda_device, label_name=label_name)
+            if verbose: print('test_accuracy: %.3f' % test_acc)
 
             if test_acc > best_acc:
                 best_acc = test_acc
