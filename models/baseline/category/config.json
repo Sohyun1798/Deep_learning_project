@@ -22,8 +22,9 @@
   "cuda_device": 0
  },
  "Train": {
-  "epoch": 50,
+  "epoch": 0,
   "lr": 0.0005,
-  "weight_decay": 0.00001
+  "weight_decay": 0.00001,
+  "early_stopping": 5
  }
 }

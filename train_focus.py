@@ -9,57 +9,9 @@ from torch import optim
 import torch.nn.functional as F
 
 from lib.embedding import load_full_embedding_with_vocab
-from lib.reader import QFocusReader
+from lib.reader import QFocusReader, test_dataset_iterator
 from lib.baseline.focus import BaselineFocusClassifier
-
-
-def test_dataset_iterator(dataset_loader, dataset_iterator):
-    for i, batch in enumerate(dataset_iterator):
-        if i > 3:
-            break
-
-        print('===== %d th batch =====' % i)
-        print()
-        print('batch info:')
-        print(batch)
-        print()
-        for i in range(batch.batch_size):
-            print('focus: %d' % (batch.focus[i]))
-            for key in ['words']:
-                print('%s:' % key)
-                print(getattr(batch, key)[i])
-                print('%s (decode):' % key)
-                row = getattr(batch, key)[i]
-                print('\t'.join([dataset_loader.dataset.fields[key].vocab.itos[w] for w in row]))
-                print()
-            print()
-
-
-def test_accuracy(clf, test_iterator, cuda_device):
-    clf.eval()
-    focuses = []
-    predicts = []
-    sents = []
-    for batch in iter(test_iterator):
-        focus = batch.focus
-        words = batch.words
-
-        outputs = clf(words)
-        if cuda_device is None:
-            predict = np.argmax(outputs.detach().numpy(), axis=-1)
-        else:
-            predict = np.argmax(outputs.detach().cpu().numpy(), axis=-1)
-
-        focuses.append(focus.numpy())
-        predicts.append(predict)
-        sents.append(words.numpy())
-
-    focuses = np.concatenate(focuses)
-    predicts = np.concatenate(predicts)
-    sents = np.concatenate(sents)
-    acc = sklearn.metrics.accuracy_score(focuses, predicts)
-    return acc, focuses, predicts, sents
-
+from lib.train import test_accuracy, train_model
 
 
 def main(config_path):
@@ -82,7 +34,6 @@ def main(config_path):
 
     # model
     model_config = config_dict['Model']
-    pad_size = dataset_config['pad_size']
     conv_width = model_config['conv_width']
     hidden_size = model_config['hidden_size']
     out_channels = model_config['out_channels']
@@ -106,42 +57,18 @@ def main(config_path):
     for test_idx in range(kfold):
         clf = BaselineFocusClassifier(words_embed=words_embed, out_channels=out_channels,
                                       cuda_device=cuda_device, conv_width=conv_width,
-                                      pad_size=pad_size, hidden_size=hidden_size,
-                                      num_filters=num_filters)
+                                      hidden_size=hidden_size, num_filters=num_filters)
         optimizer = optim.Adam(clf.parameters(), lr=lr, weight_decay=weight_decay, eps=1e-5)
         if cuda_device is not None:
             clf.cuda(device=cuda_device)
 
-        # train
-        clf.train()
-        for epoch in range(num_epoch):
-            total_loss = []
-            for i, fold in enumerate(folds):
-                if i == test_idx:
-                    continue
 
-                for batch in iter(fold):
-                    focus = batch.focus
-                    words = batch.words
-
-                    if cuda_device is not None:
-                        focus = focus.cuda()
-                        words = words.cuda()
-
-                    optimizer.zero_grad()
-                    outputs = clf(words)
-
-                    loss = F.cross_entropy(outputs, focus)
-                    total_loss.append(loss.item())
-                    loss.backward()
-                    optimizer.step()
-
-            print('epoch %d / loss %.3f' % (epoch + 1, np.mean(total_loss)))
-        print()
+        train_model(clf, optimizer, [fold for fold_idx, fold in enumerate(folds) if fold_idx != test_idx],
+                    num_epoch=num_epoch, cuda_device=cuda_device, early_stopping=0, label_name='focus')
 
         # test
         print('Testing...')
-        acc, _, _, _ = test_accuracy(clf, folds[test_idx], cuda_device)
+        acc = test_accuracy(clf, folds[test_idx], cuda_device, label_name='focus')
         print('test accuracy:', acc)
         fold_accs.append(acc)
 
@@ -154,34 +81,14 @@ def main(config_path):
 
     clf = BaselineFocusClassifier(words_embed=words_embed, out_channels=out_channels,
                                   cuda_device=cuda_device, conv_width=conv_width,
-                                  pad_size=pad_size, hidden_size=hidden_size,
-                                  num_filters=num_filters)
+                                  hidden_size=hidden_size, num_filters=num_filters)
     optimizer = optim.Adam(clf.parameters(), lr=lr, weight_decay=weight_decay, eps=1e-5)
     if cuda_device is not None:
         clf.cuda(device=cuda_device)
 
     # train
-    clf.train()
-    for epoch in range(num_epoch):
-        total_loss = []
-
-        for batch in iter(train_reader.get_dataset_iterator(batch_size)):
-            focus = batch.focus
-            words = batch.words
-
-            if cuda_device is not None:
-                focus = focus.cuda()
-                words = words.cuda()
-
-            optimizer.zero_grad()
-            outputs = clf(words)
-
-            loss = F.cross_entropy(outputs, focus)
-            total_loss.append(loss.item())
-            loss.backward()
-            optimizer.step()
-
-        print('epoch %d / loss %.3f' % (epoch + 1, np.mean(total_loss)))
+    train_model(clf, optimizer, train_reader.get_dataset_iterator(batch_size),
+                num_epoch=num_epoch, cuda_device=cuda_device, label_name='focus')
 
     torch.save(clf.state_dict(), os.path.join(model_dir, './net.pt'))
     print('Done!')

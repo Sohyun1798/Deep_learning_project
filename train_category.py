@@ -9,56 +9,9 @@ from torch import optim
 import torch.nn.functional as F
 
 from lib.embedding import load_full_embedding_with_vocab
-from lib.reader import UIUCReader
+from lib.reader import UIUCReader, test_dataset_iterator
 from lib.baseline.category import BaselineCategoryClassifier
-
-
-def test_dataset_iterator(dataset_loader, dataset_iterator):
-    for i, batch in enumerate(dataset_iterator):
-        if i > 3:
-            break
-
-        print('===== %d th batch =====' % i)
-        print()
-        print('batch info:')
-        print(batch)
-        print()
-        for i in range(batch.batch_size):
-            print('category: %d %s' % (batch.category[i], dataset_loader.dataset.fields['category'].vocab.itos[batch.category[i]]))
-            for key in ['words']:
-                print('%s:' % key)
-                print(getattr(batch, key)[i])
-                print('%s (decode):' % key)
-                row = getattr(batch, key)[i]
-                print('\t'.join([dataset_loader.dataset.fields[key].vocab.itos[w] for w in row]))
-                print()
-            print()
-
-
-def test_accuracy(clf, test_reader, cuda_device):
-    clf.eval()
-    categories = []
-    predicts = []
-    sents = []
-    for batch in iter(test_reader.get_dataset_iterator(batch_size=1, train=False, sort=False)):
-        category = batch.category
-        words = batch.words
-
-        outputs = clf(words)
-        if cuda_device is None:
-            predict = np.argmax(outputs.detach().numpy(), axis=-1)
-        else:
-            predict = np.argmax(outputs.detach().cpu().numpy(), axis=-1)
-
-        categories.append(category.numpy())
-        predicts.append(predict)
-        sents.append(words.numpy())
-
-    categories = np.concatenate(categories)
-    predicts = np.concatenate(predicts)
-    sents = np.concatenate(sents)
-    acc = sklearn.metrics.accuracy_score(categories, predicts)
-    return acc, categories, predicts, sents
+from lib.train import test_accuracy, train_model
 
 
 def main(config_path):
@@ -97,8 +50,7 @@ def main(config_path):
     vocabs = train_reader.get_vocabs() # will be used to test time
 
     clf = BaselineCategoryClassifier(words_embed=words_embed, out_channels=out_channels,
-                                     cuda_device=cuda_device,
-                                     conv_widths=conv_widths, pad_size=pad_size,
+                                     cuda_device=cuda_device, conv_widths=conv_widths,
                                      hidden_size=hidden_size, out_size=out_size)
 
     # train
@@ -106,6 +58,7 @@ def main(config_path):
     num_epoch = train_config['epoch']
     weight_decay = train_config['weight_decay']
     lr = train_config['lr']
+    early_stopping = train_config['early_stopping']
 
     optimizer = optim.Adam(clf.parameters(), lr=lr, weight_decay=weight_decay, eps=1e-5)
     if cuda_device is not None:
@@ -116,32 +69,9 @@ def main(config_path):
     test_reader.set_vocabs(vocabs)
 
     print('Training...')
-    for epoch in range(num_epoch):
-        clf.train()
-        total_loss = []
-        for batch in iter(train_reader.get_dataset_iterator(batch_size)):
-            category = batch.category
-            words = batch.words
-
-            if cuda_device is not None:
-                category = category.cuda()
-                words = words.cuda()
-
-            optimizer.zero_grad()
-            outputs = clf(words)
-
-            loss = F.cross_entropy(outputs, category)
-            total_loss.append(loss.item())
-            loss.backward()
-            optimizer.step()
-
-        print('epoch %d / loss %.3f' % (epoch+1, np.mean(total_loss)))
-        train_acc, _ ,_ ,_ = test_accuracy(clf, train_reader, cuda_device)
-        print('train_accuracy: %.3f' % train_acc)
-
-        test_acc, _, _, _ = test_accuracy(clf, test_reader, cuda_device)
-        print('test_accuracy: %.3f' % test_acc)
-        print()
+    train_model(clf, optimizer, train_reader.get_dataset_iterator(batch_size), label_name='category',
+          test_iterator=test_reader.get_dataset_iterator(batch_size),
+          num_epoch=num_epoch, cuda_device=cuda_device, early_stopping=early_stopping)
     print()
 
     torch.save(clf.state_dict(), os.path.join(model_dir, './net.pt'))
@@ -152,7 +82,8 @@ def main(config_path):
     test_reader.set_vocabs(vocabs)
 
     print('Testing...')
-    acc, categories, predicts, sents = test_accuracy(clf, test_reader, cuda_device)
+    acc, categories, predicts, sents = test_accuracy(clf, test_reader.get_dataset_iterator(batch_size),
+                                cuda_device, label_name='category', return_info=True)
     print('test accuracy:', acc)
 
     print('Writing test result...')

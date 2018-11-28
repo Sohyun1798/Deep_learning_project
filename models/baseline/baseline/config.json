@@ -1,0 +1,32 @@
+{
+ "Path": {
+  "model_dir": "models/baseline/baseline",
+  "category_vocab": "models/baseline/category/vocab/category",
+  "train": "dataset/wikiqa/WikiQACorpus/WikiQA-train.tsv",
+  "dev": "dataset/wikiqa/WikiQACorpus/WikiQA-dev.tsv",
+  "test": "dataset/wikiqa/WikiQACorpus/WikiQA-test.tsv",
+  "test_result": "models/baseline/baseline/test_result.tsv",
+  "category_model_config": "models/baseline/category/config.json",
+  "focus_model_config": "models/baseline/focus/config.json",
+  "embed_dir": "vocab/"
+ },
+ "Dataset": {
+  "pad_size": 60,
+  "batch_size": 2
+ },
+ "Model": {
+  "hidden_size": 200,
+  "out_channels": 100,
+  "conv_width": 5,
+  "cuda_device": 0,
+  "num_filters": 4,
+  "dropout": 0.5,
+  "dim_word_over": 5,
+  "dim_sem_over": 5
+ },
+ "Train": {
+  "epoch": 50,
+  "lr": 0.00005,
+  "weight_decay": 0.00001
+ }
+}
