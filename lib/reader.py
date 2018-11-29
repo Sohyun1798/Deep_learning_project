@@ -227,7 +227,7 @@ class WikiqaPairReader(BaseReader):
                 if focus < len(q_words):
                     q_sem_over[focus] = category
 
-                category_str = self.category_itos[category]
+                category_str = self.category_itos[category-1]
                 a_sem_over = [0] * len(a_words)
                 for i, a_ne in enumerate(a_nes):
                     if a_ne in self.category_ne_map[category_str]:

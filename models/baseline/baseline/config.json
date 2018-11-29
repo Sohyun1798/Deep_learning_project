@@ -28,6 +28,6 @@
   "epoch": 50,
   "lr": 0.00005,
   "weight_decay": 0.000001,
-  "early_stopping": 5
+  "early_stopping": 10
  }
 }

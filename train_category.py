@@ -33,6 +33,7 @@ def main(config_path):
     print('Loading train data...')
     train_reader = UIUCReader(train, PAD_TOKEN='<pad>', pad_size=pad_size)
     train_reader.build_vocabs(vocab_dir)
+    train_iterator = train_reader.get_dataset_iterator(batch_size, train=True)
 
     # model
     model_config = config_dict['Model']
@@ -67,12 +68,24 @@ def main(config_path):
     print('Loading test data...')
     test_reader = UIUCReader(test, PAD_TOKEN='<pad>', pad_size=pad_size)
     test_reader.set_vocabs(vocabs)
+    test_iterator = test_reader.get_dataset_iterator(batch_size, train=False, sort=False)
+
+    def callback(verbose=False):
+        train_acc = test_score(clf, train_iterator, cuda_device, 'category', return_info=False)
+        if verbose: print('train_acc: %.3f' % (train_acc))
+
+        test_acc = test_score(clf, test_iterator, cuda_device, 'category', return_info=False)
+        if verbose: print('test_acc: %.3f' % (test_acc))
+
+        return test_acc
 
     print('Training...')
-    train_model(clf, optimizer, train_reader.get_dataset_iterator(batch_size), label_name='category',
-          test_iterator=test_reader.get_dataset_iterator(batch_size),
-          num_epoch=num_epoch, cuda_device=cuda_device, early_stopping=early_stopping)
+    best_state_dict = train_model(clf, optimizer, train_iterator, label_name='category', num_epoch=num_epoch, cuda_device=cuda_device,
+                early_stopping=early_stopping, callback=callback)
     print()
+
+    if best_state_dict is not None:
+        clf.load_state_dict(best_state_dict)
 
     torch.save(clf.state_dict(), os.path.join(model_dir, './net.pt'))
 

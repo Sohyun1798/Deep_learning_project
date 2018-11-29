@@ -62,9 +62,8 @@ def main(config_path):
         if cuda_device is not None:
             clf.cuda(device=cuda_device)
 
-
-        train_model(clf, optimizer, [fold for fold_idx, fold in enumerate(folds) if fold_idx != test_idx],
-                    num_epoch=num_epoch, cuda_device=cuda_device, early_stopping=0, label_name='focus')
+        train_iterator = [fold for fold_idx, fold in enumerate(folds) if fold_idx != test_idx]
+        train_model(clf, optimizer, train_iterator, num_epoch=num_epoch, cuda_device=cuda_device, early_stopping=0, label_name='focus')
 
         # test
         print('Testing...')
@@ -86,9 +85,17 @@ def main(config_path):
     if cuda_device is not None:
         clf.cuda(device=cuda_device)
 
+    train_iterator = train_reader.get_dataset_iterator(batch_size)
+    def callback(verbose=False):
+        train_acc = test_score(clf, train_iterator, cuda_device, 'category', return_info=False)
+        if verbose: print('train_acc: %.3f' % (train_acc))
+
     # train
-    train_model(clf, optimizer, train_reader.get_dataset_iterator(batch_size),
-                num_epoch=num_epoch, cuda_device=cuda_device, label_name='focus')
+    best_state_dict = train_model(clf, optimizer, train_iterator, num_epoch=num_epoch, cuda_device=cuda_device,
+                                  label_name='focus', callback=callback)
+
+    if best_state_dict is not None:
+        clf.load_state_dict(best_state_dict)
 
     torch.save(clf.state_dict(), os.path.join(model_dir, './net.pt'))
     print('Done!')

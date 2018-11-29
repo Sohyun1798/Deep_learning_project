@@ -1,3 +1,4 @@
+import os
 from abc import abstractmethod
 
 import numpy as np
@@ -39,6 +40,35 @@ class BaseClassifier(nn.Module):
 
         return np.argmax(scores, axis=-1)
 
+def test_map(clf, test_iterator, cuda_device, label_name, input_names=['words']):
+    clf.eval()
+    labels = []
+    probas = []
+
+    if not isinstance(test_iterator, list):
+        test_iterator = [test_iterator]  # for cross-val
+
+    for iterator in test_iterator:
+        for batch in iter(iterator):
+            label = getattr(batch, label_name)
+            inputs = []
+            for input_name in input_names:
+                inputs.append(getattr(batch, input_name))
+
+            outputs = clf(*inputs)
+            if cuda_device is None:
+                prob = outputs.detach().numpy()[:, 1]
+            else:
+                prob = outputs.detach().cpu().numpy()[:, 1]
+
+            labels.append(label.numpy())
+            probas.append(prob)
+
+    labels = np.concatenate(labels)
+    probas = np.concatenate(probas)
+    score = sklearn.metrics.average_precision_score(labels, probas)
+
+    return score
 
 def test_score(clf, test_iterator, cuda_device, label_name, input_names=['words'],
                return_info=False, metric=sklearn.metrics.accuracy_score):
@@ -85,13 +115,17 @@ def test_score(clf, test_iterator, cuda_device, label_name, input_names=['words'
 
 
 def train_model(clf, optimizer, train_iterator, label_name, input_names=['words'],
-                test_iterator=None, num_epoch=0, cuda_device=None, early_stopping=3,
-                verbose=True, metric=sklearn.metrics.accuracy_score, metric_name='accuracy'):
+                num_epoch=0, cuda_device=None, early_stopping=3, verbose=True, callback=None, **callback_kwargs):
+    """
+    :param label_name: name of label field
+    :param input_names: names of input field
+    :param callbacks: [(callback_func, callback_args_dict), ...]
+        callback function can return dev_score to increase patient for early stopping
+        callback function must get verbose as keyword argument
+    :return: best_state_dict
+    """
     if num_epoch == 0 and early_stopping == 0:
         raise ValueError('if num_epoch == 0 and early_stopping == 0, trainig will run infinitely')
-
-    if test_iterator is None:
-        early_stopping = 0
 
     if num_epoch == 0:
         def inf_range():
@@ -107,7 +141,8 @@ def train_model(clf, optimizer, train_iterator, label_name, input_names=['words'
         train_iterator = [train_iterator]
 
     patient = 0
-    best_acc = 0
+    best_score = 0
+    best_state_dict = None
 
     for epoch in epoch_range:
         clf.train()
@@ -133,16 +168,14 @@ def train_model(clf, optimizer, train_iterator, label_name, input_names=['words'
                 optimizer.step()
 
         if verbose: print('epoch %d / loss %.3f' % (epoch+1, np.mean(total_loss)))
-        train_acc = test_score(clf, train_iterator, cuda_device, label_name=label_name, input_names=input_names, metric=metric)
-        if verbose: print('train_%s: %.3f' % (metric_name, train_acc))
 
-        if test_iterator is not None:
-            test_acc = test_score(clf, test_iterator, cuda_device, label_name=label_name, input_names=input_names, metric=metric)
-            if verbose: print('test_%s: %.3f' % (metric_name, test_acc))
+        if callback is not None:
+            dev_score = callback(verbose=verbose, **callback_kwargs)
 
-            if test_acc > best_acc:
-                best_acc = test_acc
+            if dev_score > best_score:
+                best_score = dev_score
                 patient = 0
+                best_state_dict = clf.state_dict()
             else:
                 patient += 1
 
@@ -151,3 +184,5 @@ def train_model(clf, optimizer, train_iterator, label_name, input_names=['words'
             break
 
         print()
+
+    return best_state_dict

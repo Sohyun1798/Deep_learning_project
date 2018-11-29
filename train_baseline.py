@@ -14,7 +14,7 @@ from lib.embedding import load_full_embedding_with_vocab
 from lib.reader import WikiqaPairReader, test_dataset_iterator
 from lib.baseline.category import BaselineCategoryClassifier
 from lib.baseline.baseline import BaselineAnswerSelectionClassifier
-from lib.train import test_score, train_model
+from lib.train import test_score, train_model, test_map
 
 
 def main(config_path):
@@ -74,13 +74,13 @@ def main(config_path):
 
     print('Training...')
     train_model(clf, optimizer, train_reader.get_dataset_iterator(batch_size), label_name='label',
-                test_iterator=dev_reader.get_dataset_iterator(batch_size),
+                test_iterator=dev_reader.get_dataset_iterator(batch_size, train=False, sort=False),
                 num_epoch=num_epoch, cuda_device=cuda_device, early_stopping=early_stopping,
                 input_names=['q_words', 'a_words', 'q_word_over', 'a_word_over', 'q_sem_over', 'a_sem_over'],
-                metric=sklearn.metrics.precision_score, metric_name='precision')
+                score_name='map', model_path=os.path.join(model_dir, 'net.pt'), score_func=test_map)
     print()
 
-    torch.save(clf.state_dict(), os.path.join(model_dir, './net.pt'))
+    # torch.save(clf.state_dict(), os.path.join(model_dir, './net.pt'))
 
     # test
     print('Loading test data...')
@@ -89,12 +89,15 @@ def main(config_path):
     test_reader.set_vocabs(vocabs)
 
     print('Testing...')
-    acc, labels, predicts, inputs = test_score(clf, test_reader.get_dataset_iterator(batch_size),
+    acc, labels, predicts, inputs = test_score(clf, test_reader.get_dataset_iterator(batch_size, train=False, sort=False),
                                                cuda_device, label_name='label', return_info=True,
                                                input_names=['q_words', 'a_words', 'q_word_over', 'a_word_over',
                                                                   'q_sem_over', 'a_sem_over'])
     print('test accuracy:', acc)
-    print('test precision:', sklearn.metrics.precision_score(labels, predicts))
+    print('test map:', test_map(clf, test_reader.get_dataset_iterator(batch_size, train=False, sort=False),
+                                               cuda_device, label_name='label',
+                                               input_names=['q_words', 'a_words', 'q_word_over', 'a_word_over',
+                                                                  'q_sem_over', 'a_sem_over']))
 
     print('Writing test result...')
     with open(test_result, 'w') as fwrite:
