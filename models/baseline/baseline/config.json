@@ -3,8 +3,10 @@
   "model_dir": "models/baseline/baseline",
   "category_vocab": "models/baseline/category/vocab/category",
   "train": "dataset/wikiqa/WikiQACorpus/WikiQA-train.tsv",
-  "dev": "dataset/wikiqa/WikiQACorpus/WikiQA-dev.tsv",
-  "test": "dataset/wikiqa/WikiQACorpus/WikiQA-test.tsv",
+  "dev": "dataset/wikiqa/WikiQACorpus/WikiQA-dev-filtered.tsv",
+  "dev_ref": "dataset/wikiqa/WikiQACorpus/WikiQA-dev-filtered.ref",
+  "test": "dataset/wikiqa/WikiQACorpus/WikiQA-test-filtered.tsv",
+  "test_ref": "dataset/wikiqa/WikiQACorpus/WikiQA-test-filtered.ref",
   "test_result": "models/baseline/baseline/test_result.tsv",
   "category_model_config": "models/baseline/category/config.json",
   "focus_model_config": "models/baseline/focus/config.json",
@@ -27,7 +29,7 @@
  "Train": {
   "epoch": 50,
   "lr": 0.00005,
-  "weight_decay": 0.000001,
+  "weight_decay": 0.0001,
   "early_stopping": 10
  }
 }

@@ -206,6 +206,7 @@ class WikiqaPairReader(BaseReader):
         with open(self.datafile, 'r') as fread:
             next(fread)
             for line in fread:
+
                 cells = line.split('\t')
                 question = cells[1]
                 answer = cells[5]
@@ -221,17 +222,25 @@ class WikiqaPairReader(BaseReader):
                 input_q_words = np.zeros((1, self.pad_size), dtype=np.int)
                 input_q_words[0, :len(q_words)] = [self.word_stoi[word] for word in q_words]
                 category = self.category_clf.predict(torch.from_numpy(input_q_words))[0] + 1
-                focus = self.focus_clf.predict(torch.from_numpy(input_q_words))[0]
+                focus_proba = self.focus_clf.predict_proba(torch.from_numpy(input_q_words))[0]
 
                 q_sem_over = [0] * len(q_words)
-                if focus < len(q_words):
-                    q_sem_over[focus] = category
+                focus = np.argmax(focus_proba[:len(q_words)])
+                q_sem_over[focus] = category
 
                 category_str = self.category_itos[category-1]
                 a_sem_over = [0] * len(a_words)
                 for i, a_ne in enumerate(a_nes):
                     if a_ne in self.category_ne_map[category_str]:
                         a_sem_over[i] = category
+
+                # print('q_words:', q_words)
+                # print('q_sem_over:', q_sem_over)
+                # print('a_words:', a_words)
+                # print('a_sem_over:', a_sem_over)
+                # print('category:', category_str)
+                # print('category_focus:', self.category_clf.predict_proba(torch.from_numpy(input_q_words))[0])
+                # print()
 
                 yield {
                     'q_words': q_words, 'a_words': a_words, 'q_word_over': q_word_over, 'a_word_over': a_word_over,
@@ -251,6 +260,27 @@ class WikiqaPairReader(BaseReader):
         }
 
         return fields
+
+
+def filtered_ref_generator(ref_path):
+    with open(ref_path) as fref:
+        before_id = -1
+        labels = []
+
+        for line in fref:
+
+            id = int(line.split()[0])
+
+            if id != before_id:
+                if len(labels) != 0:
+                    yield np.array(labels)
+                    labels = []
+
+                before_id = id
+
+            labels.append(int(line.split()[-1]))
+
+        yield np.array(labels)
 
 
 def test_dataset_iterator(dataset_reader, dataset_iterator, keys):

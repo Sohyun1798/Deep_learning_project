@@ -11,7 +11,7 @@ import torch.nn.functional as F
 from lib.embedding import load_full_embedding_with_vocab
 from lib.reader import UIUCReader, test_dataset_iterator
 from lib.baseline.category import BaselineCategoryClassifier
-from lib.train import test_score, train_model
+from lib.train import test_metric, train_model
 
 
 def main(config_path):
@@ -71,10 +71,10 @@ def main(config_path):
     test_iterator = test_reader.get_dataset_iterator(batch_size, train=False, sort=False)
 
     def callback(verbose=False):
-        train_acc = test_score(clf, train_iterator, cuda_device, 'category', return_info=False)
+        train_acc = test_metric(clf, train_iterator, cuda_device, 'category', return_info=False)
         if verbose: print('train_acc: %.3f' % (train_acc))
 
-        test_acc = test_score(clf, test_iterator, cuda_device, 'category', return_info=False)
+        test_acc = test_metric(clf, test_iterator, cuda_device, 'category', return_info=False)
         if verbose: print('test_acc: %.3f' % (test_acc))
 
         return test_acc
@@ -95,8 +95,8 @@ def main(config_path):
     test_reader.set_vocabs(vocabs)
 
     print('Testing...')
-    acc, categories, predicts, sents = test_score(clf, test_reader.get_dataset_iterator(batch_size),
-                                                  cuda_device, label_name='category', return_info=True)
+    acc, categories, predicts, sents = test_metric(clf, test_reader.get_dataset_iterator(batch_size),
+                                                   cuda_device, label_name='category', return_info=True)
     print('test accuracy:', acc)
 
     print('Writing test result...')

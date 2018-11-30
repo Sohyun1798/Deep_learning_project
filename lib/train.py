@@ -31,14 +31,20 @@ class BaseClassifier(nn.Module):
     def forward(self, *input):
         raise NotImplementedError('You should use child class')
 
-    def predict(self, *input):
+    def predict_proba(self, *input):
         logits = self.forward(*input)
         scores = F.softmax(logits, dim=-1)
 
         if self.cuda_device is not None:
             scores = scores.detach().cpu().numpy()
+        else:
+            scores = scores.detach().numpy()
 
-        return np.argmax(scores, axis=-1)
+        return scores
+
+    def predict(self, *input):
+        proba = self.predict_proba(*input)
+        return np.argmax(proba, axis=-1)
 
 def test_map(clf, test_iterator, cuda_device, label_name, input_names=['words']):
     clf.eval()
@@ -70,8 +76,45 @@ def test_map(clf, test_iterator, cuda_device, label_name, input_names=['words'])
 
     return score
 
-def test_score(clf, test_iterator, cuda_device, label_name, input_names=['words'],
-               return_info=False, metric=sklearn.metrics.accuracy_score):
+
+def get_label_score(clf, test_iterator, cuda_device, label_name, input_names=['words']):
+    clf.eval()
+    labels = []
+    scores = []
+    total_inputs = []
+
+    if not isinstance(test_iterator, list):
+        test_iterator = [test_iterator]  # for cross-val
+
+    for iterator in test_iterator:
+        for batch in iter(iterator):
+            label = getattr(batch, label_name)
+            inputs = []
+            for input_name in input_names:
+                inputs.append(getattr(batch, input_name))
+
+            outputs = clf(*inputs)
+            if cuda_device is None:
+                score = F.softmax(outputs, dim=-1).detach().numpy()
+            else:
+                score = F.softmax(outputs, dim=-1).detach().cpu().numpy()
+
+            labels.append(label.numpy())
+            scores.append(score)
+
+            if len(input_names) == 1:
+                total_inputs.append(inputs[0].numpy())
+            else:
+                total_inputs.append([input_data.numpy() for input_data in inputs])
+
+    labels = np.concatenate(labels)
+    scores = np.concatenate(scores)
+
+    return labels, scores
+
+
+def test_metric(clf, test_iterator, cuda_device, label_name, input_names=['words'],
+                return_info=False, metric=sklearn.metrics.accuracy_score):
     clf.eval()
     labels = []
     predicts = []
@@ -176,6 +219,7 @@ def train_model(clf, optimizer, train_iterator, label_name, input_names=['words'
                 best_score = dev_score
                 patient = 0
                 best_state_dict = clf.state_dict()
+                if verbose: print('save state dict')
             else:
                 patient += 1
 
