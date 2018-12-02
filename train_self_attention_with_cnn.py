@@ -1,20 +1,16 @@
 import argparse
 import json
 import os
-import pickle
 
 import numpy as np
 import sklearn.metrics
 import torch
 from torch import optim
-import torch.nn.functional as F
 
-from lib.baseline.focus import BaselineFocusClassifier
+from lib.suggested.self_attention_with_cnn import SelfAttentionCnnClassifier
 from lib.embedding import load_full_embedding_with_vocab
-from lib.reader import WikiqaBaselineReader, test_dataset_iterator, filtered_ref_generator
-from lib.baseline.category import BaselineCategoryClassifier
-from lib.baseline.baseline import BaselineAnswerSelectionClassifier
-from lib.train import test_metric, train_model, test_map, get_label_score
+from lib.reader import WikiqaReader, filtered_ref_generator
+from lib.train import train_model, get_label_score
 
 
 def main(config_path):
@@ -29,26 +25,16 @@ def main(config_path):
     dev_ref = path_config['dev_ref']
     test = path_config['test']
     test_ref = path_config['test_ref']
-    test_result = path_config['test_result']
-
-    print('Loading question analysis models...')
-    category_model = BaselineCategoryClassifier.load(path_config['category_model_config'])
-    focus_model = BaselineFocusClassifier.load(path_config['focus_model_config'])
-
-    words_embed, words_vocab = load_full_embedding_with_vocab(path_config['embed_dir'])
-    with open(path_config['category_vocab'], 'rb') as fread:
-        category_vocab = pickle.load(fread)
 
     # dataset
     dataset_config = config_dict['Dataset']
-    pad_size = dataset_config['pad_size']
     batch_size = dataset_config['batch_size']
 
     print('Loading train data...')
-    train_reader = WikiqaBaselineReader(train, category_model, focus_model, words_vocab.stoi,
-                                category_vocab.itos, PAD_TOKEN='<pad>', pad_size=pad_size)
-    dev_reader = WikiqaBaselineReader(dev, category_model, focus_model, words_vocab.stoi,
-                              category_vocab.itos, PAD_TOKEN='<pad>', pad_size=pad_size)
+    train_reader = WikiqaReader(train, PAD_TOKEN='<pad>')
+    dev_reader = WikiqaReader(dev, PAD_TOKEN='<pad>')
+
+    words_embed, words_vocab = load_full_embedding_with_vocab(path_config['embed_dir'])
     vocabs = {'q_words': words_vocab, 'a_words': words_vocab}
     train_reader.set_vocabs(vocabs)
     dev_reader.set_vocabs(vocabs)
@@ -62,9 +48,13 @@ def main(config_path):
     out_channels = model_config['out_channels']
     hidden_size = model_config['hidden_size']
     cuda_device = model_config['cuda_device']
+    dropout = model_config['dropout']
+    h = model_config['h']
+    d_ff = model_config['d_ff']
 
-    clf = BaselineAnswerSelectionClassifier(words_embed=words_embed, out_channels=out_channels,
-                conv_width=conv_width, hidden_size=hidden_size, cuda_device=cuda_device)
+    clf = SelfAttentionCnnClassifier(words_embed=words_embed, out_channels=out_channels,
+                conv_width=conv_width, hidden_size=hidden_size, cuda_device=cuda_device,
+                h=h, d_ff=d_ff)
 
     # train
     train_config = config_dict['Train']
@@ -73,7 +63,7 @@ def main(config_path):
     lr = train_config['lr']
     early_stopping = train_config['early_stopping']
 
-    input_names = ['q_words', 'a_words', 'q_word_over', 'a_word_over', 'q_sem_over', 'a_sem_over']
+    input_names = ['q_words', 'a_words']
 
     optimizer = optim.Adam(clf.parameters(), lr=lr, weight_decay=weight_decay, eps=1e-5)
     if cuda_device is not None:
@@ -135,8 +125,7 @@ def main(config_path):
 
     # test
     print('Loading test data...')
-    test_reader = WikiqaBaselineReader(test, category_model, focus_model, words_vocab.stoi,
-                               category_vocab.itos, PAD_TOKEN='<pad>', pad_size=pad_size)
+    test_reader = WikiqaReader(test, PAD_TOKEN='<pad>')
     test_reader.set_vocabs(vocabs)
     test_iterator = test_reader.get_dataset_iterator(batch_size, train=False, sort=False)
 

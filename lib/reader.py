@@ -19,6 +19,10 @@ class BaseReader(object):
         self.dataset = self.load_dataset()
         self.folds = None
 
+    def preprocess(self, sentence):
+        doc = self.nlp(sentence)
+        return [token.lower_ for token in doc]
+
     def load_dataset(self):
         fields = self._get_fields()
         data_dict_generator = self._data_dict_generator()
@@ -140,11 +144,6 @@ class UIUCReader(BaseReader):
 class QFocusReader(BaseReader):
     def __init__(self, datafile, PAD_TOKEN='<pad>', pad_size=60):
         super(QFocusReader, self).__init__(datafile, PAD_TOKEN=PAD_TOKEN, pad_size=pad_size)
-        self.nlp = spacy.load('en')
-
-    def preprocess(self, sentence):
-        doc = self.nlp(sentence)
-        return [token.lower_ for token in doc]
 
     def _data_dict_generator(self):
         with open(self.datafile, 'r') as fread:
@@ -173,18 +172,45 @@ class QFocusReader(BaseReader):
         return fields
 
 
-class WikiqaPairReader(BaseReader):
-    def __init__(self, datafile, category_clf, focus_clf, word_stoi, category_itos,
-                 PAD_TOKEN='<pad>', pad_size=60):
+class WikiqaReader(BaseReader):
+    def __init__(self, datafile, PAD_TOKEN='<pad>'):
+        super(WikiqaReader, self).__init__(datafile, PAD_TOKEN=PAD_TOKEN)
+
+    def _data_dict_generator(self):
+        with open(self.datafile, 'r') as fread:
+            next(fread)
+            for line in fread:
+                cells = line.split('\t')
+                question = cells[1]
+                answer = cells[5]
+                label = int(cells[6])
+
+                q_words = self.preprocess(question)
+                a_words = self.preprocess(answer)
+
+                yield { 'q_words': q_words, 'a_words': a_words, 'label': label }
+
+    def _get_fields(self):
+        fields = {
+            'q_words': ('q_words', Field(pad_token=self.PAD_TOKEN, batch_first=True, sequential=True, use_vocab=True)),
+            'a_words': ('a_words', Field(pad_token=self.PAD_TOKEN, batch_first=True, sequential=True, use_vocab=True)),
+            'label': ('label', Field(batch_first=True, sequential=False, use_vocab=False))
+        }
+
+        return fields
+
+
+class WikiqaBaselineReader(BaseReader):
+    def __init__(self, datafile, category_clf, focus_clf, word_stoi, category_itos, PAD_TOKEN='<pad>', pad_size=60):
         # trick for use vocab in data load
         self.word_stoi = word_stoi
         self.category_itos = category_itos
 
         self.category_ne_map = {
-            'HUM': { 'PERSON' },
-            'LOC': { 'LOC', 'GPE' },
-            'NUM': { 'DATE', 'TIME', 'PERCENT', 'QUANTITY', 'ORDINAL', 'CARDINAL', 'MONEY' },
-            'ENTY': { 'NORP', 'ORG', 'FAC', 'PRODUCT', 'EVENT', 'WORK_OF_ART', 'LAW', 'LANGUAGE' },
+            'HUM': {'PERSON'},
+            'LOC': {'LOC', 'GPE'},
+            'NUM': {'DATE', 'TIME', 'PERCENT', 'QUANTITY', 'ORDINAL', 'CARDINAL', 'MONEY'},
+            'ENTY': {'NORP', 'ORG', 'FAC', 'PRODUCT', 'EVENT', 'WORK_OF_ART', 'LAW', 'LANGUAGE'},
         }
         self.category_ne_map['DESC'] = self.category_ne_map['NUM'] | self.category_ne_map['ENTY']
         self.category_ne_map['ABBR'] = self.category_ne_map['ENTY'].copy()
@@ -192,7 +218,7 @@ class WikiqaPairReader(BaseReader):
         self.category_clf = category_clf
         self.focus_clf = focus_clf
 
-        super(WikiqaPairReader, self).__init__(datafile, PAD_TOKEN=PAD_TOKEN, pad_size=pad_size)
+        super(WikiqaBaselineReader, self).__init__(datafile, PAD_TOKEN=PAD_TOKEN, pad_size=pad_size)
 
     def preprocess(self, sentence, answer=False):
         doc = self.nlp(sentence)
@@ -247,20 +273,30 @@ class WikiqaPairReader(BaseReader):
                     'q_sem_over': q_sem_over, 'a_sem_over': a_sem_over, 'label': label
                 }
 
-
     def _get_fields(self):
         fields = {
-            'q_words': ('q_words', Field(pad_token=self.PAD_TOKEN, batch_first=True, sequential=True, use_vocab=True, fix_length=self.pad_size)),
-            'a_words': ('a_words', Field(pad_token=self.PAD_TOKEN, batch_first=True, sequential=True, use_vocab=True, fix_length=self.pad_size)),
-            'q_word_over': ('q_word_over', Field(pad_token=0, batch_first=True, sequential=True, use_vocab=False, fix_length=self.pad_size)),
-            'a_word_over': ('a_word_over', Field(pad_token=0, batch_first=True, sequential=True, use_vocab=False, fix_length=self.pad_size)),
-            'q_sem_over': ('q_sem_over', Field(pad_token=0, batch_first=True, use_vocab=False, sequential=True, fix_length=self.pad_size)),
-            'a_sem_over': ('a_sem_over', Field(pad_token=0, batch_first=True, use_vocab=False, sequential=True, fix_length=self.pad_size)),
+            'q_words': ('q_words',
+                        Field(pad_token=self.PAD_TOKEN, batch_first=True, sequential=True, use_vocab=True,
+                              fix_length=self.pad_size)),
+            'a_words': ('a_words',
+                        Field(pad_token=self.PAD_TOKEN, batch_first=True, sequential=True, use_vocab=True,
+                              fix_length=self.pad_size)),
+            'q_word_over': ('q_word_over',
+                            Field(pad_token=0, batch_first=True, sequential=True, use_vocab=False,
+                                  fix_length=self.pad_size)),
+            'a_word_over': ('a_word_over',
+                            Field(pad_token=0, batch_first=True, sequential=True, use_vocab=False,
+                                  fix_length=self.pad_size)),
+            'q_sem_over': ('q_sem_over',
+                           Field(pad_token=0, batch_first=True, use_vocab=False, sequential=True,
+                                 fix_length=self.pad_size)),
+            'a_sem_over': ('a_sem_over',
+                           Field(pad_token=0, batch_first=True, use_vocab=False, sequential=True,
+                                 fix_length=self.pad_size)),
             'label': ('label', Field(batch_first=True, sequential=False, use_vocab=False))
         }
 
         return fields
-
 
 def filtered_ref_generator(ref_path):
     with open(ref_path) as fref:

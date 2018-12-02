@@ -51,7 +51,9 @@ class BaselineAnswerSelectionClassifier(BaseClassifier):
 
         model = cls(words_embed=words_embed, out_channels=model_config['out_channels'],
                     conv_width=model_config['conv_width'], hidden_size=model_config['hidden_size'],
-                    cuda_device=model_config['cuda_device'])
+                    cuda_device=model_config['cuda_device'], dim_word_over=model_config['dim_word_over'],
+                    len_sem_over=model_config['len_sem_over'], dim_sem_over=model_config['dim_sem_over'],
+                    dropout=model_config['dropout'])
 
         model.load_state_dict(torch.load(os.path.join(path_config['model_dir'], 'net.pt')))
         model.eval()

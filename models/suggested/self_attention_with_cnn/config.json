@@ -1,0 +1,31 @@
+{
+ "Path": {
+  "model_dir": "models/suggested/self_attention_with_cnn",
+  "train": "dataset/wikiqa/WikiQACorpus/WikiQA-train.tsv",
+  "dev": "dataset/wikiqa/WikiQACorpus/WikiQA-dev-filtered.tsv",
+  "dev_ref": "dataset/wikiqa/WikiQACorpus/WikiQA-dev-filtered.ref",
+  "test": "dataset/wikiqa/WikiQACorpus/WikiQA-test-filtered.tsv",
+  "test_ref": "dataset/wikiqa/WikiQACorpus/WikiQA-test-filtered.ref",
+  "embed_dir": "vocab/"
+ },
+ "Dataset": {
+  "pad_size": 60,
+  "batch_size": 50
+ },
+ "Model": {
+  "hidden_size": 200,
+  "out_channels": 100,
+  "conv_width": 5,
+  "cuda_device": 0,
+  "num_filters": 4,
+  "dropout": 0.1,
+  "h": 5,
+  "d_ff": 128
+ },
+ "Train": {
+  "epoch": 50,
+  "lr": 0.00005,
+  "weight_decay": 0.00001,
+  "early_stopping": 5
+ }
+}
