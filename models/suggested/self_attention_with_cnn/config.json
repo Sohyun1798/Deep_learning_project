@@ -19,7 +19,7 @@
   "cuda_device": 0,
   "dropout": 0.3,
   "h": 10,
-  "d_ff": 256
+  "d_ff": 128
  },
  "Train": {
   "epoch": 0,

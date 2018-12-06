@@ -100,9 +100,9 @@ def main(config_path):
 
     input_names = ['q_words', 'a_words']
 
-    for h in [5, 10]: # TODO Noam
-        for d_ff in [128, 256, 512]:
-            print('========== h = %d / d_ff = %d ==========' % (h, d_ff))
+    for dropout in [0.1, 0.3, 0.5]: # TODO Noam
+        for _ in [1]:
+            print('========== dropout = %.2f / _ = %d ==========' % (dropout, _))
             clf = SelfAttentionCnnClassifier(words_embed=words_embed, out_channels=out_channels,
                                              conv_width=conv_width, hidden_size=hidden_size, cuda_device=cuda_device,
                                              h=h, d_ff=d_ff, dropout=dropout)
