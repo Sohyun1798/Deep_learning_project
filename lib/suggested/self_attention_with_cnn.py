@@ -76,10 +76,11 @@ class SelfAttentionCnnClassifier(BaseClassifier):
             input = [data.cuda(self.cuda_device) for data in input]
 
         q_words, a_words = input
-        q_mask = (q_words > 1).unsqueeze(-2)
-        a_mask = (a_words > 1).unsqueeze(-2)
+        q_mask = (q_words != 1).unsqueeze(-2) # Debugging (q_words > 1) -> (q_words != 1)
+        a_mask = (a_words != 1).unsqueeze(-2)
         
         q_sent_mat = self.embed(q_words)
+        q_mha1_out = q_sent_mat
         q_mha1_out = self.q_mha1(q_sent_mat, q_sent_mat, q_sent_mat, q_mask)
         q_mha1_out = self.q_layer_norms[0](q_mha1_out + q_sent_mat)
 
@@ -89,16 +90,18 @@ class SelfAttentionCnnClassifier(BaseClassifier):
 
         q_mha2_out = self.q_mha2(q_mha1_out, a_mha1_out, a_mha1_out, a_mask)
         q_mha2_out = self.q_layer_norms[1](q_mha2_out + q_mha1_out)
-        q_ffn_out = self.q_ffn(q_mha2_out)
-        q_ffn_out = self.q_layer_norms[2](q_ffn_out + q_mha2_out)
+        # q_ffn_out = self.q_ffn(q_mha2_out)
+        # q_ffn_out = self.q_layer_norms[2](q_ffn_out + q_mha2_out)
+        q_ffn_out = q_mha2_out # Debugging
         
         q_conv_out = self.q_conv(q_ffn_out.transpose(2,1))
         q_pool_out, _ = torch.max(q_conv_out, dim=-1)
 
         a_mha2_out = self.a_mha2(a_mha1_out, q_mha1_out, q_mha1_out, q_mask)
         a_mha2_out = self.a_layer_norms[1](a_mha2_out + a_mha1_out)
-        a_ffn_out = self.a_ffn(a_mha2_out)
-        a_ffn_out = self.a_layer_norms[2](a_ffn_out + a_mha2_out)
+        # a_ffn_out = self.a_ffn(a_mha2_out)
+        # a_ffn_out = self.a_layer_norms[2](a_ffn_out + a_mha2_out)
+        a_ffn_out = a_mha2_out # Debugging
         
         a_conv_out = self.a_conv(a_ffn_out.transpose(2, 1))
         a_pool_out, _ = torch.max(a_conv_out, dim=-1)
