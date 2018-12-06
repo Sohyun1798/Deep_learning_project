@@ -1,3 +1,4 @@
+import copy
 import os
 from abc import abstractmethod
 
@@ -7,6 +8,8 @@ import sklearn.metrics
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+from lib.transformer import NoamOpt
 
 
 class BaseClassifier(nn.Module):
@@ -202,9 +205,12 @@ def train_model(clf, optimizer, train_iterator, label_name, input_names=['words'
                     label = label.cuda()
                     inputs = [input_data.cuda() for input_data in inputs]
 
-                optimizer.zero_grad()
-                outputs = clf(*inputs)
+                if isinstance(optimizer, NoamOpt):
+                    optimizer.optimizer.zero_grad()
+                else:
+                    optimizer.zero_grad()
 
+                outputs = clf(*inputs)
                 loss = F.cross_entropy(outputs, label)
                 total_loss.append(loss.item())
                 loss.backward()
@@ -215,10 +221,11 @@ def train_model(clf, optimizer, train_iterator, label_name, input_names=['words'
         if callback is not None:
             dev_score = callback(verbose=verbose, **callback_kwargs)
 
-            if dev_score > best_score:
+            if dev_score is None or dev_score > best_score:
                 best_score = dev_score
                 patient = 0
-                best_state_dict = clf.state_dict()
+
+                best_state_dict = copy.deepcopy(clf.state_dict())
                 if verbose: print('save state dict')
             else:
                 patient += 1
@@ -227,6 +234,6 @@ def train_model(clf, optimizer, train_iterator, label_name, input_names=['words'
             if verbose: print('early_stopping')
             break
 
-        print()
+        if verbose: print()
 
     return best_state_dict

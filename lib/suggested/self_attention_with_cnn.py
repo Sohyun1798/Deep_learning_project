@@ -1,3 +1,4 @@
+import numpy as np
 import os
 import json
 
@@ -7,7 +8,7 @@ import torch.nn.functional as F
 
 from lib.embedding import load_full_embedding_with_vocab
 from lib.train import BaseClassifier
-from lib.transformer import MultiHeadedAttention, PositionwiseFeedForward
+from lib.transformer import MultiHeadedAttention, PositionwiseFeedForward, PositionalEncoding
 
 
 class SelfAttentionCnnClassifier(BaseClassifier):
@@ -17,15 +18,17 @@ class SelfAttentionCnnClassifier(BaseClassifier):
         super(SelfAttentionCnnClassifier, self).__init__(cuda_device=cuda_device,
                     words_embed=words_embed, len_vocab=len_vocab, len_embed=len_embed)
 
+        self.pos_enc = PositionalEncoding(self.len_embed, dropout)
+
         self.q_mha1 = MultiHeadedAttention(h=h, d_model=self.len_embed, dropout=dropout)
         self.q_mha2 = MultiHeadedAttention(h=h, d_model=self.len_embed, dropout=dropout)
         self.q_ffn = PositionwiseFeedForward(d_model=self.len_embed, d_ff=d_ff, dropout=dropout)
-        self.q_layer_norms = [nn.LayerNorm([self.len_embed]) for _ in range(3)]
+        self.q_layer_norms = nn.ModuleList([nn.LayerNorm([self.len_embed]) for _ in range(3)])
 
         self.a_mha1 = MultiHeadedAttention(h=h, d_model=self.len_embed, dropout=dropout)
         self.a_mha2 = MultiHeadedAttention(h=h, d_model=self.len_embed, dropout=dropout)
         self.a_ffn = PositionwiseFeedForward(d_model=self.len_embed, d_ff=d_ff, dropout=dropout)
-        self.a_layer_norms = [nn.LayerNorm([self.len_embed]) for _ in range(3)]
+        self.a_layer_norms = nn.ModuleList([nn.LayerNorm([self.len_embed]) for _ in range(3)])
 
         self.q_conv = nn.Conv1d(self.len_embed, out_channels, conv_width, padding=(conv_width//2))
         self.a_conv = nn.Conv1d(self.len_embed, out_channels, conv_width, padding=(conv_width//2))
@@ -38,11 +41,11 @@ class SelfAttentionCnnClassifier(BaseClassifier):
             self.q_mha1 = self.q_mha1.cuda(self.cuda_device)
             self.q_mha2 = self.q_mha2.cuda(self.cuda_device)
             self.q_ffn = self.q_ffn.cuda(self.cuda_device)
-            self.q_layer_norms = [ln.cuda(self.cuda_device) for ln in self.q_layer_norms]
+            self.q_layer_norms = self.q_layer_norms.cuda(self.cuda_device)
             self.a_mha1 = self.a_mha1.cuda(self.cuda_device)
             self.a_mha2 = self.a_mha2.cuda(self.cuda_device)
             self.a_ffn = self.a_ffn.cuda(self.cuda_device)
-            self.a_layer_norms = [ln.cuda(self.cuda_device) for ln in self.a_layer_norms]
+            self.a_layer_norms = self.a_layer_norms.cuda(self.cuda_device)
             self.q_conv = self.q_conv.cuda(self.cuda_device)
             self.a_conv = self.a_conv.cuda(self.cuda_device)
             self.hidden1 = self.hidden1.cuda(self.cuda_device)
@@ -73,8 +76,8 @@ class SelfAttentionCnnClassifier(BaseClassifier):
             input = [data.cuda(self.cuda_device) for data in input]
 
         q_words, a_words = input
-        q_mask = (q_words < 2).unsqueeze(-2)
-        a_mask = (a_words < 2).unsqueeze(-2)
+        q_mask = (q_words > 1).unsqueeze(-2)
+        a_mask = (a_words > 1).unsqueeze(-2)
         
         q_sent_mat = self.embed(q_words)
         q_mha1_out = self.q_mha1(q_sent_mat, q_sent_mat, q_sent_mat, q_mask)

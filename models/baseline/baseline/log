@@ -1,0 +1,204 @@
+Loading question analysis models...
+Loading train data...
+Training...
+epoch 1 / loss 0.250
+train_acc: 0.95
+/home/chadaeun/PycharmProjects/KrStackPointer_python3/venv/lib/python3.6/site-packages/sklearn/metrics/classification.py:1143: UndefinedMetricWarning: Precision is ill-defined and being set to 0.0 due to no predicted samples.
+  'precision', 'predicted', average, warn_for)
+train_precision: 0.00
+train_average_precision: 0.11
+dev_acc: 0.88
+dev_precision: 0.00
+dev_average_precision: 0.20
+dev_MAP: 0.53
+dev_MRR: 0.54
+save state dict
+
+epoch 2 / loss 0.195
+train_acc: 0.95
+train_precision: 0.00
+train_average_precision: 0.22
+dev_acc: 0.88
+dev_precision: 0.00
+dev_average_precision: 0.31
+dev_MAP: 0.61
+dev_MRR: 0.62
+save state dict
+
+epoch 3 / loss 0.186
+train_acc: 0.95
+train_precision: 0.00
+train_average_precision: 0.26
+dev_acc: 0.88
+dev_precision: 0.00
+dev_average_precision: 0.36
+dev_MAP: 0.65
+dev_MRR: 0.65
+save state dict
+
+epoch 4 / loss 0.178
+train_acc: 0.95
+train_precision: 0.00
+train_average_precision: 0.28
+dev_acc: 0.88
+dev_precision: 0.00
+dev_average_precision: 0.40
+dev_MAP: 0.66
+dev_MRR: 0.66
+save state dict
+
+epoch 5 / loss 0.172
+train_acc: 0.95
+train_precision: 0.83
+train_average_precision: 0.30
+dev_acc: 0.88
+dev_precision: 0.00
+dev_average_precision: 0.43
+dev_MAP: 0.66
+dev_MRR: 0.66
+
+epoch 6 / loss 0.167
+train_acc: 0.95
+train_precision: 0.93
+train_average_precision: 0.31
+dev_acc: 0.88
+dev_precision: 0.00
+dev_average_precision: 0.45
+dev_MAP: 0.68
+dev_MRR: 0.68
+save state dict
+
+epoch 7 / loss 0.166
+train_acc: 0.95
+train_precision: 0.86
+train_average_precision: 0.33
+dev_acc: 0.88
+dev_precision: 1.00
+dev_average_precision: 0.46
+dev_MAP: 0.69
+dev_MRR: 0.69
+save state dict
+
+epoch 8 / loss 0.162
+train_acc: 0.95
+train_precision: 0.91
+train_average_precision: 0.35
+dev_acc: 0.88
+dev_precision: 1.00
+dev_average_precision: 0.47
+dev_MAP: 0.69
+dev_MRR: 0.70
+save state dict
+
+epoch 9 / loss 0.160
+train_acc: 0.95
+train_precision: 0.80
+train_average_precision: 0.36
+dev_acc: 0.89
+dev_precision: 0.89
+dev_average_precision: 0.48
+dev_MAP: 0.70
+dev_MRR: 0.70
+save state dict
+
+epoch 10 / loss 0.157
+train_acc: 0.95
+train_precision: 0.82
+train_average_precision: 0.38
+dev_acc: 0.89
+dev_precision: 0.89
+dev_average_precision: 0.49
+dev_MAP: 0.71
+dev_MRR: 0.71
+save state dict
+
+epoch 11 / loss 0.154
+train_acc: 0.95
+train_precision: 0.86
+train_average_precision: 0.39
+dev_acc: 0.89
+dev_precision: 0.89
+dev_average_precision: 0.49
+dev_MAP: 0.72
+dev_MRR: 0.72
+save state dict
+
+epoch 12 / loss 0.152
+train_acc: 0.95
+train_precision: 0.83
+train_average_precision: 0.41
+dev_acc: 0.89
+dev_precision: 0.91
+dev_average_precision: 0.50
+dev_MAP: 0.73
+dev_MRR: 0.73
+save state dict
+
+epoch 13 / loss 0.148
+train_acc: 0.95
+train_precision: 0.84
+train_average_precision: 0.43
+dev_acc: 0.89
+dev_precision: 0.93
+dev_average_precision: 0.50
+dev_MAP: 0.72
+dev_MRR: 0.72
+
+epoch 14 / loss 0.146
+train_acc: 0.95
+train_precision: 0.84
+train_average_precision: 0.44
+dev_acc: 0.89
+dev_precision: 0.90
+dev_average_precision: 0.50
+dev_MAP: 0.72
+dev_MRR: 0.73
+
+epoch 15 / loss 0.143
+train_acc: 0.96
+train_precision: 0.84
+train_average_precision: 0.46
+dev_acc: 0.89
+dev_precision: 0.90
+dev_average_precision: 0.50
+dev_MAP: 0.72
+dev_MRR: 0.73
+
+epoch 16 / loss 0.141
+train_acc: 0.95
+train_precision: 0.85
+train_average_precision: 0.48
+dev_acc: 0.89
+dev_precision: 0.89
+dev_average_precision: 0.50
+dev_MAP: 0.73
+dev_MRR: 0.73
+
+epoch 17 / loss 0.138
+train_acc: 0.96
+train_precision: 0.85
+train_average_precision: 0.50
+dev_acc: 0.90
+dev_precision: 0.91
+dev_average_precision: 0.50
+dev_MAP: 0.72
+dev_MRR: 0.72
+
+epoch 18 / loss 0.135
+train_acc: 0.96
+train_precision: 0.86
+train_average_precision: 0.52
+dev_acc: 0.90
+dev_precision: 0.91
+dev_average_precision: 0.50
+dev_MAP: 0.70
+dev_MRR: 0.71
+early_stopping
+
+Loading test data...
+Testing...
+test_acc: 0.88
+test_precision: 1.00
+test_average_precision: 0.47
+test_MAP: 0.70
+test_MRR: 0.72

@@ -6,6 +6,7 @@ import torch.nn.functional as F
 
 # http://nlp.seas.harvard.edu/2018/04/03/attention.html
 # The Annotated Trnasformer
+from torch.autograd import Variable
 
 
 def attention(query, key, value, mask=None, dropout=None):
@@ -30,7 +31,7 @@ class MultiHeadedAttention(nn.Module):
         # We assume d_v always equals d_k
         self.d_k = d_model // h
         self.h = h
-        self.linears = [nn.Linear(d_model, d_model) for _ in range(4)]
+        self.linears = nn.ModuleList([nn.Linear(d_model, d_model) for _ in range(4)])
         self.attn = None
         self.dropout = nn.Dropout(p=dropout)
 
@@ -56,9 +57,10 @@ class MultiHeadedAttention(nn.Module):
         return self.linears[-1](x)
 
     def cuda(self, device=None):
-        self.linears = [l.cuda(device) for l in self.linears]
+        self.linears = self.linears.cuda(device)
         self.dropout = self.dropout.cuda(device)
         return super(MultiHeadedAttention, self).cuda(device)
+
 
 class PositionwiseFeedForward(nn.Module):
     "Implements FFN equation."
@@ -77,3 +79,55 @@ class PositionwiseFeedForward(nn.Module):
         self.w_2 = self.w_2.cuda(device)
         self.dropout = self.dropout.cuda(device)
         return super(PositionwiseFeedForward, self).cuda(device)
+
+
+class PositionalEncoding(nn.Module):
+    "Implement the PE function."
+
+    def __init__(self, d_model, dropout, max_len=5000):
+        super(PositionalEncoding, self).__init__()
+        self.dropout = nn.Dropout(p=dropout)
+
+        # Compute the positional encodings once in log space.
+        pe = torch.zeros(max_len, d_model)
+        position = torch.arange(0.0, max_len).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0.0, d_model, 2) *
+                             -(math.log(10000.0) / d_model))
+        pe[:, 0::2] = torch.sin(position * div_term)
+        pe[:, 1::2] = torch.cos(position * div_term)
+        pe = pe.unsqueeze(0)
+        self.register_buffer('pe', pe)
+
+    def forward(self, x):
+        x = x + Variable(self.pe[:, :x.size(1)],
+                         requires_grad=False)
+        return self.dropout(x)
+
+
+class NoamOpt:
+    "Optim wrapper that implements rate."
+
+    def __init__(self, model_size, factor, warmup, optimizer):
+        self.optimizer = optimizer
+        self._step = 0
+        self.warmup = warmup
+        self.factor = factor
+        self.model_size = model_size
+        self._rate = 0
+
+    def step(self):
+        "Update parameters and rate"
+        self._step += 1
+        rate = self.rate()
+        for p in self.optimizer.param_groups:
+            p['lr'] = rate
+        self._rate = rate
+        self.optimizer.step()
+
+    def rate(self, step=None):
+        "Implement `lrate` above"
+        if step is None:
+            step = self._step
+        return self.factor * \
+               (self.model_size ** (-0.5) *
+                min(step ** (-0.5), step * self.warmup ** (-1.5)))

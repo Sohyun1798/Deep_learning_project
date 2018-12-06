@@ -1,0 +1,76 @@
+Loading train data...
+Loading test data...
+Training...
+epoch 1 / loss 1.469
+train_acc: 0.598
+test_acc: 0.610
+save state dict
+
+epoch 2 / loss 1.016
+train_acc: 0.732
+test_acc: 0.758
+save state dict
+
+epoch 3 / loss 0.753
+train_acc: 0.805
+test_acc: 0.830
+save state dict
+
+epoch 4 / loss 0.609
+train_acc: 0.836
+test_acc: 0.846
+save state dict
+
+epoch 5 / loss 0.514
+train_acc: 0.853
+test_acc: 0.862
+save state dict
+
+epoch 6 / loss 0.447
+train_acc: 0.882
+test_acc: 0.848
+
+epoch 7 / loss 0.388
+train_acc: 0.900
+test_acc: 0.894
+save state dict
+
+epoch 8 / loss 0.331
+train_acc: 0.927
+test_acc: 0.866
+
+epoch 9 / loss 0.273
+train_acc: 0.941
+test_acc: 0.910
+save state dict
+
+epoch 10 / loss 0.242
+train_acc: 0.960
+test_acc: 0.896
+
+epoch 11 / loss 0.194
+train_acc: 0.971
+test_acc: 0.906
+
+epoch 12 / loss 0.164
+train_acc: 0.984
+test_acc: 0.910
+
+epoch 13 / loss 0.137
+train_acc: 0.989
+test_acc: 0.908
+
+epoch 14 / loss 0.113
+train_acc: 0.990
+test_acc: 0.902
+
+epoch 15 / loss 0.095
+train_acc: 0.994
+test_acc: 0.900
+early_stopping
+
+Loading test data...
+Testing...
+test accuracy: 0.91
+Writing test result...
+Done!

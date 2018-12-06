@@ -87,7 +87,7 @@ def main(config_path):
 
     train_iterator = train_reader.get_dataset_iterator(batch_size)
     def callback(verbose=False):
-        train_acc = test_metric(clf, train_iterator, cuda_device, 'category', return_info=False)
+        train_acc = test_metric(clf, train_iterator, cuda_device, 'focus', return_info=False)
         if verbose: print('train_acc: %.3f' % (train_acc))
 
     # train

@@ -1,0 +1,747 @@
+Loading train data...
+epoch 1 / loss 4.130
+
+epoch 2 / loss 3.075
+
+epoch 3 / loss 1.775
+
+epoch 4 / loss 1.193
+
+epoch 5 / loss 0.772
+
+epoch 6 / loss 0.532
+
+epoch 7 / loss 0.391
+
+epoch 8 / loss 0.318
+
+epoch 9 / loss 0.278
+
+epoch 10 / loss 0.246
+
+epoch 11 / loss 0.238
+
+epoch 12 / loss 0.221
+
+epoch 13 / loss 0.206
+
+epoch 14 / loss 0.198
+
+epoch 15 / loss 0.185
+
+epoch 16 / loss 0.184
+
+epoch 17 / loss 0.174
+
+epoch 18 / loss 0.178
+
+epoch 19 / loss 0.175
+
+epoch 20 / loss 0.162
+
+epoch 21 / loss 0.165
+
+epoch 22 / loss 0.153
+
+epoch 23 / loss 0.165
+
+epoch 24 / loss 0.159
+
+epoch 25 / loss 0.165
+
+epoch 26 / loss 0.147
+
+epoch 27 / loss 0.144
+
+epoch 28 / loss 0.142
+
+epoch 29 / loss 0.148
+
+epoch 30 / loss 0.139
+
+Testing...
+test accuracy: 0.883495145631068
+epoch 1 / loss 4.128
+
+epoch 2 / loss 3.198
+
+epoch 3 / loss 1.846
+
+epoch 4 / loss 1.302
+
+epoch 5 / loss 0.849
+
+epoch 6 / loss 0.591
+
+epoch 7 / loss 0.447
+
+epoch 8 / loss 0.361
+
+epoch 9 / loss 0.304
+
+epoch 10 / loss 0.291
+
+epoch 11 / loss 0.250
+
+epoch 12 / loss 0.234
+
+epoch 13 / loss 0.213
+
+epoch 14 / loss 0.206
+
+epoch 15 / loss 0.212
+
+epoch 16 / loss 0.201
+
+epoch 17 / loss 0.187
+
+epoch 18 / loss 0.179
+
+epoch 19 / loss 0.183
+
+epoch 20 / loss 0.178
+
+epoch 21 / loss 0.181
+
+epoch 22 / loss 0.168
+
+epoch 23 / loss 0.172
+
+epoch 24 / loss 0.172
+
+epoch 25 / loss 0.163
+
+epoch 26 / loss 0.153
+
+epoch 27 / loss 0.155
+
+epoch 28 / loss 0.152
+
+epoch 29 / loss 0.152
+
+epoch 30 / loss 0.148
+
+Testing...
+test accuracy: 0.9514563106796117
+epoch 1 / loss 4.145
+
+epoch 2 / loss 3.655
+
+epoch 3 / loss 1.939
+
+epoch 4 / loss 1.342
+
+epoch 5 / loss 0.865
+
+epoch 6 / loss 0.586
+
+epoch 7 / loss 0.426
+
+epoch 8 / loss 0.346
+
+epoch 9 / loss 0.305
+
+epoch 10 / loss 0.264
+
+epoch 11 / loss 0.245
+
+epoch 12 / loss 0.235
+
+epoch 13 / loss 0.227
+
+epoch 14 / loss 0.201
+
+epoch 15 / loss 0.198
+
+epoch 16 / loss 0.187
+
+epoch 17 / loss 0.196
+
+epoch 18 / loss 0.175
+
+epoch 19 / loss 0.172
+
+epoch 20 / loss 0.175
+
+epoch 21 / loss 0.180
+
+epoch 22 / loss 0.157
+
+epoch 23 / loss 0.164
+
+epoch 24 / loss 0.153
+
+epoch 25 / loss 0.154
+
+epoch 26 / loss 0.150
+
+epoch 27 / loss 0.141
+
+epoch 28 / loss 0.151
+
+epoch 29 / loss 0.145
+
+epoch 30 / loss 0.145
+
+Testing...
+test accuracy: 0.9223300970873787
+epoch 1 / loss 4.142
+
+epoch 2 / loss 3.703
+
+epoch 3 / loss 2.056
+
+epoch 4 / loss 1.550
+
+epoch 5 / loss 1.051
+
+epoch 6 / loss 0.701
+
+epoch 7 / loss 0.520
+
+epoch 8 / loss 0.397
+
+epoch 9 / loss 0.330
+
+epoch 10 / loss 0.285
+
+epoch 11 / loss 0.258
+
+epoch 12 / loss 0.248
+
+epoch 13 / loss 0.219
+
+epoch 14 / loss 0.209
+
+epoch 15 / loss 0.193
+
+epoch 16 / loss 0.187
+
+epoch 17 / loss 0.178
+
+epoch 18 / loss 0.183
+
+epoch 19 / loss 0.181
+
+epoch 20 / loss 0.170
+
+epoch 21 / loss 0.164
+
+epoch 22 / loss 0.165
+
+epoch 23 / loss 0.155
+
+epoch 24 / loss 0.157
+
+epoch 25 / loss 0.155
+
+epoch 26 / loss 0.153
+
+epoch 27 / loss 0.149
+
+epoch 28 / loss 0.150
+
+epoch 29 / loss 0.147
+
+epoch 30 / loss 0.146
+
+Testing...
+test accuracy: 0.9029126213592233
+epoch 1 / loss 4.111
+
+epoch 2 / loss 2.993
+
+epoch 3 / loss 1.784
+
+epoch 4 / loss 1.257
+
+epoch 5 / loss 0.843
+
+epoch 6 / loss 0.517
+
+epoch 7 / loss 0.384
+
+epoch 8 / loss 0.326
+
+epoch 9 / loss 0.285
+
+epoch 10 / loss 0.236
+
+epoch 11 / loss 0.222
+
+epoch 12 / loss 0.210
+
+epoch 13 / loss 0.193
+
+epoch 14 / loss 0.187
+
+epoch 15 / loss 0.181
+
+epoch 16 / loss 0.182
+
+epoch 17 / loss 0.184
+
+epoch 18 / loss 0.169
+
+epoch 19 / loss 0.162
+
+epoch 20 / loss 0.157
+
+epoch 21 / loss 0.163
+
+epoch 22 / loss 0.152
+
+epoch 23 / loss 0.152
+
+epoch 24 / loss 0.149
+
+epoch 25 / loss 0.146
+
+epoch 26 / loss 0.146
+
+epoch 27 / loss 0.143
+
+epoch 28 / loss 0.144
+
+epoch 29 / loss 0.141
+
+epoch 30 / loss 0.137
+
+Testing...
+test accuracy: 0.912621359223301
+epoch 1 / loss 4.134
+
+epoch 2 / loss 3.433
+
+epoch 3 / loss 1.938
+
+epoch 4 / loss 1.577
+
+epoch 5 / loss 1.159
+
+epoch 6 / loss 0.776
+
+epoch 7 / loss 0.534
+
+epoch 8 / loss 0.397
+
+epoch 9 / loss 0.320
+
+epoch 10 / loss 0.285
+
+epoch 11 / loss 0.252
+
+epoch 12 / loss 0.233
+
+epoch 13 / loss 0.221
+
+epoch 14 / loss 0.208
+
+epoch 15 / loss 0.201
+
+epoch 16 / loss 0.190
+
+epoch 17 / loss 0.186
+
+epoch 18 / loss 0.176
+
+epoch 19 / loss 0.171
+
+epoch 20 / loss 0.171
+
+epoch 21 / loss 0.171
+
+epoch 22 / loss 0.156
+
+epoch 23 / loss 0.153
+
+epoch 24 / loss 0.154
+
+epoch 25 / loss 0.155
+
+epoch 26 / loss 0.150
+
+epoch 27 / loss 0.148
+
+epoch 28 / loss 0.146
+
+epoch 29 / loss 0.149
+
+epoch 30 / loss 0.147
+
+Testing...
+test accuracy: 0.9223300970873787
+epoch 1 / loss 4.141
+
+epoch 2 / loss 3.401
+
+epoch 3 / loss 1.858
+
+epoch 4 / loss 1.304
+
+epoch 5 / loss 0.860
+
+epoch 6 / loss 0.589
+
+epoch 7 / loss 0.437
+
+epoch 8 / loss 0.346
+
+epoch 9 / loss 0.287
+
+epoch 10 / loss 0.242
+
+epoch 11 / loss 0.222
+
+epoch 12 / loss 0.219
+
+epoch 13 / loss 0.193
+
+epoch 14 / loss 0.192
+
+epoch 15 / loss 0.172
+
+epoch 16 / loss 0.171
+
+epoch 17 / loss 0.169
+
+epoch 18 / loss 0.152
+
+epoch 19 / loss 0.154
+
+epoch 20 / loss 0.147
+
+epoch 21 / loss 0.143
+
+epoch 22 / loss 0.143
+
+epoch 23 / loss 0.147
+
+epoch 24 / loss 0.135
+
+epoch 25 / loss 0.141
+
+epoch 26 / loss 0.126
+
+epoch 27 / loss 0.123
+
+epoch 28 / loss 0.127
+
+epoch 29 / loss 0.122
+
+epoch 30 / loss 0.122
+
+Testing...
+test accuracy: 0.8155339805825242
+epoch 1 / loss 4.135
+
+epoch 2 / loss 3.331
+
+epoch 3 / loss 1.780
+
+epoch 4 / loss 1.161
+
+epoch 5 / loss 0.656
+
+epoch 6 / loss 0.431
+
+epoch 7 / loss 0.323
+
+epoch 8 / loss 0.284
+
+epoch 9 / loss 0.248
+
+epoch 10 / loss 0.223
+
+epoch 11 / loss 0.208
+
+epoch 12 / loss 0.197
+
+epoch 13 / loss 0.203
+
+epoch 14 / loss 0.185
+
+epoch 15 / loss 0.177
+
+epoch 16 / loss 0.170
+
+epoch 17 / loss 0.166
+
+epoch 18 / loss 0.166
+
+epoch 19 / loss 0.161
+
+epoch 20 / loss 0.164
+
+epoch 21 / loss 0.157
+
+epoch 22 / loss 0.152
+
+epoch 23 / loss 0.158
+
+epoch 24 / loss 0.143
+
+epoch 25 / loss 0.142
+
+epoch 26 / loss 0.153
+
+epoch 27 / loss 0.138
+
+epoch 28 / loss 0.137
+
+epoch 29 / loss 0.135
+
+epoch 30 / loss 0.135
+
+Testing...
+test accuracy: 0.912621359223301
+epoch 1 / loss 4.124
+
+epoch 2 / loss 3.102
+
+epoch 3 / loss 1.840
+
+epoch 4 / loss 1.340
+
+epoch 5 / loss 0.846
+
+epoch 6 / loss 0.503
+
+epoch 7 / loss 0.344
+
+epoch 8 / loss 0.292
+
+epoch 9 / loss 0.260
+
+epoch 10 / loss 0.231
+
+epoch 11 / loss 0.216
+
+epoch 12 / loss 0.211
+
+epoch 13 / loss 0.201
+
+epoch 14 / loss 0.192
+
+epoch 15 / loss 0.184
+
+epoch 16 / loss 0.181
+
+epoch 17 / loss 0.183
+
+epoch 18 / loss 0.181
+
+epoch 19 / loss 0.179
+
+epoch 20 / loss 0.174
+
+epoch 21 / loss 0.164
+
+epoch 22 / loss 0.166
+
+epoch 23 / loss 0.164
+
+epoch 24 / loss 0.162
+
+epoch 25 / loss 0.158
+
+epoch 26 / loss 0.152
+
+epoch 27 / loss 0.156
+
+epoch 28 / loss 0.161
+
+epoch 29 / loss 0.151
+
+epoch 30 / loss 0.153
+
+Testing...
+test accuracy: 0.941747572815534
+epoch 1 / loss 4.139
+
+epoch 2 / loss 3.447
+
+epoch 3 / loss 1.917
+
+epoch 4 / loss 1.409
+
+epoch 5 / loss 0.966
+
+epoch 6 / loss 0.634
+
+epoch 7 / loss 0.482
+
+epoch 8 / loss 0.385
+
+epoch 9 / loss 0.334
+
+epoch 10 / loss 0.311
+
+epoch 11 / loss 0.277
+
+epoch 12 / loss 0.255
+
+epoch 13 / loss 0.239
+
+epoch 14 / loss 0.218
+
+epoch 15 / loss 0.208
+
+epoch 16 / loss 0.195
+
+epoch 17 / loss 0.200
+
+epoch 18 / loss 0.185
+
+epoch 19 / loss 0.184
+
+epoch 20 / loss 0.174
+
+epoch 21 / loss 0.174
+
+epoch 22 / loss 0.170
+
+epoch 23 / loss 0.162
+
+epoch 24 / loss 0.166
+
+epoch 25 / loss 0.168
+
+epoch 26 / loss 0.159
+
+epoch 27 / loss 0.167
+
+epoch 28 / loss 0.154
+
+epoch 29 / loss 0.152
+
+epoch 30 / loss 0.146
+
+Testing...
+test accuracy: 0.8737864077669902
+
+test accuracies: [0.883495145631068, 0.9514563106796117, 0.9223300970873787, 0.9029126213592233, 0.912621359223301, 0.9223300970873787, 0.8155339805825242, 0.912621359223301, 0.941747572815534, 0.8737864077669902]
+mean accuracies: 0.903883495145631
+
+Final Training...
+epoch 1 / loss 4.136
+train_acc: 0.318
+save state dict
+
+epoch 2 / loss 3.234
+train_acc: 0.240
+save state dict
+
+epoch 3 / loss 1.855
+train_acc: 0.420
+save state dict
+
+epoch 4 / loss 1.287
+train_acc: 0.679
+save state dict
+
+epoch 5 / loss 0.836
+train_acc: 0.798
+save state dict
+
+epoch 6 / loss 0.588
+train_acc: 0.854
+save state dict
+
+epoch 7 / loss 0.436
+train_acc: 0.889
+save state dict
+
+epoch 8 / loss 0.359
+train_acc: 0.909
+save state dict
+
+epoch 9 / loss 0.310
+train_acc: 0.921
+save state dict
+
+epoch 10 / loss 0.272
+train_acc: 0.929
+save state dict
+
+epoch 11 / loss 0.243
+train_acc: 0.942
+save state dict
+
+epoch 12 / loss 0.226
+train_acc: 0.946
+save state dict
+
+epoch 13 / loss 0.213
+train_acc: 0.949
+save state dict
+
+epoch 14 / loss 0.208
+train_acc: 0.955
+save state dict
+
+epoch 15 / loss 0.199
+train_acc: 0.955
+save state dict
+
+epoch 16 / loss 0.189
+train_acc: 0.960
+save state dict
+
+epoch 17 / loss 0.187
+train_acc: 0.956
+save state dict
+
+epoch 18 / loss 0.179
+train_acc: 0.952
+save state dict
+
+epoch 19 / loss 0.174
+train_acc: 0.958
+save state dict
+
+epoch 20 / loss 0.174
+train_acc: 0.959
+save state dict
+
+epoch 21 / loss 0.172
+train_acc: 0.962
+save state dict
+
+epoch 22 / loss 0.163
+train_acc: 0.963
+save state dict
+
+epoch 23 / loss 0.165
+train_acc: 0.963
+save state dict
+
+epoch 24 / loss 0.159
+train_acc: 0.964
+save state dict
+
+epoch 25 / loss 0.157
+train_acc: 0.966
+save state dict
+
+epoch 26 / loss 0.159
+train_acc: 0.963
+save state dict
+
+epoch 27 / loss 0.153
+train_acc: 0.967
+save state dict
+
+epoch 28 / loss 0.153
+train_acc: 0.967
+save state dict
+
+epoch 29 / loss 0.149
+train_acc: 0.965
+save state dict
+
+epoch 30 / loss 0.147
+train_acc: 0.968
+save state dict
+
+Done!

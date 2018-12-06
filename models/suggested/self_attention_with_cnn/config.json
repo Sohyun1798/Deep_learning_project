@@ -17,15 +17,16 @@
   "out_channels": 100,
   "conv_width": 5,
   "cuda_device": 0,
-  "num_filters": 4,
-  "dropout": 0.1,
-  "h": 5,
-  "d_ff": 128
+  "dropout": 0.3,
+  "h": 10,
+  "d_ff": 256
  },
  "Train": {
-  "epoch": 50,
+  "epoch": 0,
   "lr": 0.00005,
   "weight_decay": 0.00001,
-  "early_stopping": 5
+  "early_stopping": 5,
+   "factor": 2,
+   "warmup": 4000
  }
 }

@@ -1,7 +1,6 @@
 import argparse
 import json
 import os
-import sys
 
 import numpy as np
 import sklearn.metrics
@@ -54,27 +53,6 @@ def main(config_path):
     h = model_config['h']
     d_ff = model_config['d_ff']
 
-    clf = SelfAttentionCnnClassifier(words_embed=words_embed, out_channels=out_channels,
-                conv_width=conv_width, hidden_size=hidden_size, cuda_device=cuda_device,
-                h=h, d_ff=d_ff, dropout=dropout)
-
-    # train
-    train_config = config_dict['Train']
-    num_epoch = train_config['epoch']
-    weight_decay = train_config['weight_decay']
-    lr = train_config['lr']
-    early_stopping = train_config['early_stopping']
-    factor = train_config['factor']
-    warmup = train_config['warmup']
-
-    input_names = ['q_words', 'a_words']
-
-    optimizer = optim.Adam(clf.parameters(), lr=lr, weight_decay=weight_decay, eps=1e-5)
-    # optimizer = NoamOpt(clf.len_embed, factor, warmup,
-    #         optim.Adam(clf.parameters(), lr=0, weight_decay=weight_decay, eps=1e-5))
-
-    if cuda_device is not None:
-        clf.cuda(device=cuda_device)
 
     def callback(verbose=True):
         train_labels, train_scores = get_label_score(clf, train_iterator, cuda_device, 'label', input_names=input_names)
@@ -105,61 +83,80 @@ def main(config_path):
             query_rel_best = np.argmin( -query_scores * query_labels)
             rrs.append(1 / (np.argsort(np.argsort(-query_scores))[query_rel_best] + 1))
 
-            # if verbose:
-            #     print('DEBUGGING ap:', aps[-1])
-            #     print('DEBUGGING rel_best:', query_rel_best)
-            #     print('DEBUGGING score:', query_scores)
-            #     print('DEBUGGING labels:', query_labels)
-            #     print('DEBUGGING RR:', rrs[-1])
-            #     print()
-
         if verbose:
             print('dev_MAP: %.2f' % np.mean(aps))
             print('dev_MRR: %.2f' % np.mean(rrs))
 
         return np.mean(aps)
 
-    print('Training...')
-    best_state_dict = train_model(clf, optimizer, train_iterator, label_name='label',
-                num_epoch=num_epoch, cuda_device=cuda_device, early_stopping=early_stopping,
-                input_names=input_names, callback=callback)
-    print()
+    # train
+    train_config = config_dict['Train']
+    num_epoch = train_config['epoch']
+    weight_decay = train_config['weight_decay']
+    lr = train_config['lr']
+    early_stopping = train_config['early_stopping']
+    factor = train_config['factor']
+    warmup = train_config['warmup']
 
-    if best_state_dict is not None:
-        clf.load_state_dict(best_state_dict)
+    input_names = ['q_words', 'a_words']
 
-    torch.save(clf.state_dict(), os.path.join(model_dir, './net.pt'))
+    for h in [5, 10]: # TODO Noam
+        for d_ff in [128, 256, 512]:
+            print('========== h = %d / d_ff = %d ==========' % (h, d_ff))
+            clf = SelfAttentionCnnClassifier(words_embed=words_embed, out_channels=out_channels,
+                                             conv_width=conv_width, hidden_size=hidden_size, cuda_device=cuda_device,
+                                             h=h, d_ff=d_ff, dropout=dropout)
 
-    # test
-    print('Loading test data...')
-    test_reader = WikiqaReader(test, PAD_TOKEN='<pad>')
-    test_reader.set_vocabs(vocabs)
-    test_iterator = test_reader.get_dataset_iterator(batch_size, train=False, sort=False)
+            optimizer = NoamOpt(clf.len_embed, factor, warmup,
+                                optim.Adam(clf.parameters(), lr=0, weight_decay=weight_decay, eps=1e-5))
+            if cuda_device is not None:
+                clf.cuda(device=cuda_device)
 
-    print('Testing...')
+            print('Training...')
+            best_state_dict = train_model(clf, optimizer, train_iterator, label_name='label',
+                        num_epoch=num_epoch, cuda_device=cuda_device, early_stopping=early_stopping,
+                        input_names=input_names, callback=callback, verbose=False)
+            print()
 
-    test_labels, test_scores = get_label_score(clf, test_iterator, cuda_device, 'label', input_names=input_names)
-    test_predicts = test_scores.argmax(axis=-1)
-    test_scores = test_scores[:, 1]
-    
-    print('test_acc: %.2f' % sklearn.metrics.accuracy_score(test_labels, test_predicts))
-    print('test_precision: %.2f' % sklearn.metrics.precision_score(test_labels, test_predicts))
-    print('test_average_precision: %.2f' % sklearn.metrics.average_precision_score(test_labels, test_scores))
+            if best_state_dict is not None:
+                clf.load_state_dict(best_state_dict)
 
-    index = 0
-    aps = []  # for mean average precision score
-    rrs = []  # for mean reciprocal rank score
+            # torch.save(clf.state_dict(), os.path.join(model_dir, './net.pt'))
 
-    for query_labels in filtered_ref_generator(test_ref):
-        query_scores = test_scores[index:index + len(query_labels)]
-        index += len(query_labels)
+            # test
+            print('Loading test data...')
+            test_reader = WikiqaReader(test, PAD_TOKEN='<pad>')
+            test_reader.set_vocabs(vocabs)
+            test_iterator = test_reader.get_dataset_iterator(batch_size, train=False, sort=False)
 
-        aps.append(sklearn.metrics.average_precision_score(query_labels, query_scores))
-        query_rel_best = np.argmin(-query_scores * query_labels)
-        rrs.append(1 / (np.argsort(np.argsort(-query_scores))[query_rel_best] + 1))
+            print('Testing...')
 
-    print('test_MAP: %.2f' % np.mean(aps))
-    print('test_MRR: %.2f' % np.mean(rrs))
+            test_labels, test_scores = get_label_score(clf, test_iterator, cuda_device, 'label', input_names=input_names)
+            test_predicts = test_scores.argmax(axis=-1)
+            test_scores = test_scores[:, 1]
+
+            print('test_acc: %.2f' % sklearn.metrics.accuracy_score(test_labels, test_predicts))
+            print('test_precision: %.2f' % sklearn.metrics.precision_score(test_labels, test_predicts))
+            print('test_average_precision: %.2f' % sklearn.metrics.average_precision_score(test_labels, test_scores))
+
+            index = 0
+            aps = []  # for mean average precision score
+            rrs = []  # for mean reciprocal rank score
+
+            for query_labels in filtered_ref_generator(test_ref):
+                query_scores = test_scores[index:index + len(query_labels)]
+                index += len(query_labels)
+
+                aps.append(sklearn.metrics.average_precision_score(query_labels, query_scores))
+                query_rel_best = np.argmin(-query_scores * query_labels)
+                rrs.append(1 / (np.argsort(np.argsort(-query_scores))[query_rel_best] + 1))
+
+            print('test_MAP: %.2f' % np.mean(aps))
+            print('test_MRR: %.2f' % np.mean(rrs))
+            print()
+
+            del clf, optimizer, best_state_dict
+            torch.cuda.empty_cache()
 
 
 if __name__ == '__main__':

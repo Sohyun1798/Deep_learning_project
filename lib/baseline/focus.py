@@ -20,14 +20,14 @@ class BaselineFocusClassifier(BaseClassifier):
 
         if self.cuda_device is None:
             self.conv1 = nn.Conv1d(self.len_embed, out_channels, conv_width, padding=conv_width//2)
-            self.convs = [nn.Conv1d(out_channels, out_channels, conv_width, padding=conv_width//2)
-                          for _ in range(num_filters-1)]
+            self.convs = nn.ModuleList([nn.Conv1d(out_channels, out_channels, conv_width, padding=conv_width//2)
+                          for _ in range(num_filters-1)])
             self.hidden1 = nn.Linear(out_channels, hidden_size)
             self.hidden2 = nn.Linear(hidden_size, 1)
         else:
             self.conv1 = nn.Conv1d(self.len_embed, out_channels, conv_width, padding=conv_width // 2).cuda(self.cuda_device)
-            self.convs = [nn.Conv1d(out_channels, out_channels, conv_width, padding=conv_width // 2).cuda(self.cuda_device)
-                          for _ in range(num_filters-1)]
+            self.convs = nn.ModuleList([nn.Conv1d(out_channels, out_channels, conv_width, padding=conv_width // 2).cuda(self.cuda_device)
+                          for _ in range(num_filters-1)])
             self.hidden1 = nn.Linear(out_channels, hidden_size).cuda(self.cuda_device)
             self.hidden2 = nn.Linear(hidden_size, 1).cuda(self.cuda_device)
 
