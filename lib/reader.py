@@ -1,4 +1,6 @@
+import csv
 import os
+import pandas as pd
 import pickle
 
 import numpy as np
@@ -177,18 +179,16 @@ class WikiqaReader(BaseReader):
         super(WikiqaReader, self).__init__(datafile, PAD_TOKEN=PAD_TOKEN)
 
     def _data_dict_generator(self):
-        with open(self.datafile, 'r') as fread:
-            next(fread)
-            for line in fread:
-                cells = line.split('\t')
-                question = cells[1]
-                answer = cells[5]
-                label = int(cells[6])
+        df = pd.read_csv(self.datafile, sep='\t', quoting=csv.QUOTE_NONE)
+        for i, row in df.iterrows():
+            question = row.Question
+            answer = row.Sentence
+            label = row.Label
 
-                q_words = self.preprocess(question)
-                a_words = self.preprocess(answer)
+            q_words = self.preprocess(question)
+            a_words = self.preprocess(answer)
 
-                yield { 'q_words': q_words, 'a_words': a_words, 'label': label }
+            yield { 'q_words': q_words, 'a_words': a_words, 'label': label }
 
     def _get_fields(self):
         fields = {
@@ -229,49 +229,46 @@ class WikiqaBaselineReader(BaseReader):
             return [token.lower_ for token in doc]
 
     def _data_dict_generator(self):
-        with open(self.datafile, 'r') as fread:
-            next(fread)
-            for line in fread:
+        df = pd.read_csv(self.datafile, sep='\t', quoting=csv.QUOTE_NONE)
+        for i, row in df.iterrows():
+            question = row.Question
+            answer = row.Sentence
+            label = row.Label
 
-                cells = line.split('\t')
-                question = cells[1]
-                answer = cells[5]
-                label = int(cells[6])
+            q_words = self.preprocess(question)
+            a_words, a_nes = self.preprocess(answer, answer=True)
 
-                q_words = self.preprocess(question)
-                a_words, a_nes = self.preprocess(answer, answer=True)
+            over_words = set(q_words) & set(a_words)
+            q_word_over = [int(word in over_words) for word in q_words]
+            a_word_over = [int(word in over_words) for word in a_words]
 
-                over_words = set(q_words) & set(a_words)
-                q_word_over = [int(word in over_words) for word in q_words]
-                a_word_over = [int(word in over_words) for word in a_words]
+            input_q_words = np.zeros((1, self.pad_size), dtype=np.int)
+            input_q_words[0, :len(q_words)] = [self.word_stoi[word] for word in q_words]
+            category = self.category_clf.predict(torch.from_numpy(input_q_words))[0] + 1
+            focus_proba = self.focus_clf.predict_proba(torch.from_numpy(input_q_words))[0]
 
-                input_q_words = np.zeros((1, self.pad_size), dtype=np.int)
-                input_q_words[0, :len(q_words)] = [self.word_stoi[word] for word in q_words]
-                category = self.category_clf.predict(torch.from_numpy(input_q_words))[0] + 1
-                focus_proba = self.focus_clf.predict_proba(torch.from_numpy(input_q_words))[0]
+            q_sem_over = [0] * len(q_words)
+            focus = np.argmax(focus_proba[:len(q_words)])
+            q_sem_over[focus] = category
 
-                q_sem_over = [0] * len(q_words)
-                focus = np.argmax(focus_proba[:len(q_words)])
-                q_sem_over[focus] = category
+            category_str = self.category_itos[category-1]
+            a_sem_over = [0] * len(a_words)
+            for i, a_ne in enumerate(a_nes):
+                if a_ne in self.category_ne_map[category_str]:
+                    a_sem_over[i] = category
 
-                category_str = self.category_itos[category-1]
-                a_sem_over = [0] * len(a_words)
-                for i, a_ne in enumerate(a_nes):
-                    if a_ne in self.category_ne_map[category_str]:
-                        a_sem_over[i] = category
+            # print('q_words:', q_words)
+            # print('q_sem_over:', q_sem_over)
+            # print('a_words:', a_words)
+            # print('a_sem_over:', a_sem_over)
+            # print('category:', category_str)
+            # print('category_focus:', self.category_clf.predict_proba(torch.from_numpy(input_q_words))[0])
+            # print()
 
-                # print('q_words:', q_words)
-                # print('q_sem_over:', q_sem_over)
-                # print('a_words:', a_words)
-                # print('a_sem_over:', a_sem_over)
-                # print('category:', category_str)
-                # print('category_focus:', self.category_clf.predict_proba(torch.from_numpy(input_q_words))[0])
-                # print()
-
-                yield {
-                    'q_words': q_words, 'a_words': a_words, 'q_word_over': q_word_over, 'a_word_over': a_word_over,
-                    'q_sem_over': q_sem_over, 'a_sem_over': a_sem_over, 'label': label
-                }
+            yield {
+                'q_words': q_words, 'a_words': a_words, 'q_word_over': q_word_over, 'a_word_over': a_word_over,
+                'q_sem_over': q_sem_over, 'a_sem_over': a_sem_over, 'label': label
+            }
 
     def _get_fields(self):
         fields = {

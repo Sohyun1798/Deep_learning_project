@@ -51,7 +51,6 @@ def main(config_path):
     cuda_device = model_config['cuda_device']
     dropout = model_config['dropout']
     h = model_config['h']
-    d_ff = model_config['d_ff']
 
 
     def callback(verbose=True):
@@ -100,12 +99,12 @@ def main(config_path):
 
     input_names = ['q_words', 'a_words']
 
-    for dropout in [0.1, 0.3, 0.5]: # TODO Noam
-        for _ in [1]:
-            print('========== dropout = %.2f / _ = %d ==========' % (dropout, _))
+    for factor in [1,2,3]:
+        for warmup in [1000, 2000, 4000, 8000]:
+            print('========== factor = %d / warmup = %d ==========' % (factor, warmup))
             clf = SelfAttentionCnnClassifier(words_embed=words_embed, out_channels=out_channels,
                                              conv_width=conv_width, hidden_size=hidden_size, cuda_device=cuda_device,
-                                             h=h, d_ff=d_ff, dropout=dropout)
+                                             h=h, dropout=dropout)
 
             optimizer = NoamOpt(clf.len_embed, factor, warmup,
                                 optim.Adam(clf.parameters(), lr=0, weight_decay=weight_decay, eps=1e-5))
