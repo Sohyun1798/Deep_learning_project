@@ -171,8 +171,8 @@ def main(config_path):
         query_rel_best = np.argmin(-query_scores * query_labels)
         rrs.append(1 / (np.argsort(np.argsort(-query_scores))[query_rel_best] + 1))
 
-    print('test_MAP: %.2f' % np.mean(aps))
-    print('test_MRR: %.2f' % np.mean(rrs))
+    print('test_MAP: %.4f' % np.mean(aps))
+    print('test_MRR: %.4f' % np.mean(rrs))
 
 
 if __name__ == '__main__':

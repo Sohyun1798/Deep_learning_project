@@ -69,27 +69,42 @@ class SelfAttentionCnnClassifier(BaseClassifier):
         if self.cuda_device is not None:
             input = [data.cuda(self.cuda_device) for data in input]
 
+        # words: (batch size, sentence length)
         q_words, a_words = input
+
+        # mask: (batch size, 1, sentence length)
+        # if word is special pad token (so have to be ignored in multi-head attention) or not
         q_mask = (q_words != 1).unsqueeze(-2)
         a_mask = (a_words != 1).unsqueeze(-2)
-        
+
+        # sent_mat: (batch size, sentence length, embedding dimension)
+        # we added Layer Normalization layer after embedding
         q_sent_mat = self.q_layer_norms[0](self.embed(q_words))
         a_sent_mat = self.a_layer_norms[0](self.embed(a_words))
 
+        # mha_out: (batch size, sentence length, embedding dimension)
+        # multi-head attention output
+        # self.q_mha = MultiHeadedAttention(h=h, d_model=self.len_embed, dropout=dropout)
         q_mha_out = self.q_mha(q_sent_mat, a_sent_mat, a_sent_mat, a_mask)
         q_mha_out = self.q_layer_norms[1](q_mha_out + q_sent_mat)
-
-        q_conv_out = self.q_conv(q_mha_out.transpose(2,1))
-        q_pool_out, _ = torch.max(q_conv_out, dim=-1)
 
         a_mha_out = self.a_mha(a_sent_mat, q_sent_mat, q_sent_mat, q_mask)
         a_mha_out = self.a_layer_norms[1](a_mha_out + a_sent_mat)
 
+        # conv_out: (batch size, out channels, sentence length)
+        q_conv_out = self.q_conv(q_mha_out.transpose(2,1))
+        # pool out: (batch size, out_channels)
+        # we used max over time pooling
+        q_pool_out, _ = torch.max(q_conv_out, dim=-1)
+
         a_conv_out = self.a_conv(a_mha_out.transpose(2, 1))
         a_pool_out, _ = torch.max(a_conv_out, dim=-1)
 
+        # qa_repr: (batch size, out channels * 2)
+        # joined representation
         qa_repr = torch.cat([q_pool_out, a_pool_out], dim=-1)
 
+        # hidden layer and softmax layer
         hidden1_out = self.hidden1(qa_repr)
         hidden2_out = self.hidden2(self.dropout(F.relu(hidden1_out)))
 
