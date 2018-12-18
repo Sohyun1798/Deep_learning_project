@@ -30,15 +30,6 @@ class BaselineAnswerSelectionClassifier(BaseClassifier):
         self.dropout = nn.Dropout(dropout)
         self.hidden2 = nn.Linear(hidden_size, out_size)
 
-        if self.cuda_device is not None:
-            self.word_over_embed = self.word_over_embed.cuda(self.cuda_device)
-            self.sem_over_embed = self.sem_over_embed.cuda(self.cuda_device)
-            self.q_conv = self.q_conv.cuda(self.cuda_device)
-            self.a_conv = self.a_conv.cuda(self.cuda_device)
-            self.hidden1 = self.hidden1.cuda(self.cuda_device)
-            self.dropout = self.dropout.cuda(self.cuda_device)
-            self.hidden2 = self.hidden2.cuda(self.cuda_device)
-
     @classmethod
     def load(cls, config_path):
         with open(config_path, 'r') as fread:

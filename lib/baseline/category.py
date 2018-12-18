@@ -17,18 +17,11 @@ class BaselineCategoryClassifier(BaseClassifier):
         super(BaselineCategoryClassifier, self).__init__(cuda_device=cuda_device,
                     words_embed=words_embed, len_vocab=len_vocab, len_embed=len_embed)
 
-        if self.cuda_device is None:
-            self.convs = nn.ModuleList([nn.Conv1d(self.len_embed, out_channels, width, padding=(width//2))
-                          for width in conv_widths])
-            self.hidden1 = nn.Linear(out_channels * len(self.convs), hidden_size)
-            self.dropout = nn.Dropout(0.3)
-            self.hidden2 = nn.Linear(hidden_size, out_size)
-        else:
-            self.convs = nn.ModuleList([nn.Conv1d(self.len_embed, out_channels, width, padding=(width//2)).cuda(self.cuda_device)
-                        for width in conv_widths])
-            self.hidden1 = nn.Linear(out_channels * len(self.convs), hidden_size).cuda(self.cuda_device)
-            self.dropout = nn.Dropout(0.3).cuda(self.cuda_device)
-            self.hidden2 = nn.Linear(hidden_size, out_size).cuda(self.cuda_device)
+        self.convs = nn.ModuleList([nn.Conv1d(self.len_embed, out_channels, width, padding=(width//2))
+                      for width in conv_widths])
+        self.hidden1 = nn.Linear(out_channels * len(self.convs), hidden_size)
+        self.dropout = nn.Dropout(0.3)
+        self.hidden2 = nn.Linear(hidden_size, out_size)
 
 
     @classmethod
